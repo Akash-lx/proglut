@@ -15,6 +15,7 @@ app.use(express.static("public"))
 app.use(cookieParser())
 
 
+
 //routes import
 import vendorRouter from './routes/vendor.route.js'
 import userRouter from './routes/user.route.js'
@@ -26,6 +27,11 @@ import bussinessActivityRouter from './routes/bussinessActivity.route.js'
 
 
 //routes declaration
+
+app.get('/',(req,res) =>{
+    res.send('Welcome to Progult');
+})
+
 app.use("/api/v1/vendor", vendorRouter)
 app.use("/api/v1/user", userRouter)
 app.use("/api/v1/domain", domainRouter)
