@@ -1,49 +1,58 @@
 import { Router } from 'express';
 import {
     getAllBussiness,
-addBussinessInfo,
-getBussinessById,
-updateBussinessInfo,
-updateStatusBussiness,
-deleteBussiness,
-getActiveBussiness,
-updateBussinesslogo,
-addAminities
+    addBussinessInfo,
+    getBussinessById,
+    updateBussinessInfo,
+    updateStatusBussiness,
+    deleteBussiness,
+    getActiveBussiness,
+    updateBussinesslogo,
+    addAminities,
+    addBussinessHour,
+    updateBussinessHour,
+    deleteBussinessHour
 } from "../controllers/bussiness.controller.js"
-import {verifyVendorJWT} from "../middlewares/auth.middleware.js"
-import {bussinessUpload} from "../middlewares/multer.middleware.js"
+import { verifyVendorJWT } from "../middlewares/auth.middleware.js"
+import { bussinessUpload } from "../middlewares/multer.middleware.js"
 
 const router = Router();
 // router.use(verifyVendorJWT); // Apply verifyJWT middleware to all routes in this file
 
 router.route("/").get(getAllBussiness)
-    .post(verifyVendorJWT,addBussinessInfo)
-    .patch(verifyVendorJWT,updateBussinessInfo);
+    .post(verifyVendorJWT, addBussinessInfo)
+    .patch(verifyVendorJWT, updateBussinessInfo);
 
-router.route("/logo").patch( bussinessUpload.fields([
+router.route("/logo").patch(bussinessUpload.fields([
     {
         name: "brandLogo",
         maxCount: 1
-    }, 
+    },
     {
         name: "coverImage",
         maxCount: 1
     }
-]),updateBussinesslogo);
+]), updateBussinesslogo);
 
 router
     .route("/detail")
     .get(getBussinessById)
     .patch(updateStatusBussiness);
-    // .delete(deleteBussiness)
+// .delete(deleteBussiness)
 
 router.route("/active").get(getActiveBussiness);
 
 router.route("/aminities/")
-// .get(verifyVendorJWT, getAllActivity)
+    // .get(verifyVendorJWT, getAllActivity)
     .post(verifyVendorJWT, addAminities);
-    // .delete(verifyVendorJWT, deleteActivity);
-    // .patch(itemUpload.single("image"), updateActivity);
+// .delete(verifyVendorJWT, deleteActivity);
+// .patch(itemUpload.single("image"), updateActivity);
+
+router.route("/slots/")
+    // .get(verifyVendorJWT, getAllActivity)
+    .post(verifyVendorJWT, addBussinessHour)
+    .delete(verifyVendorJWT, deleteBussinessHour)
+    .patch(verifyVendorJWT, updateBussinessHour);
 
 
 export default router

@@ -21,6 +21,10 @@ const itemSchema = new Schema(
         stock: {
             type: Number,
         },
+        unit: {
+            type: Schema.Types.ObjectId,
+            ref: "Master"
+        },
         description: {
             type: String,
             // required: true
@@ -28,6 +32,7 @@ const itemSchema = new Schema(
 
         type: {
             type: String,
+            enum:['item','food'],
             required: true,
             index: true
         },

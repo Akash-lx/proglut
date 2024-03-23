@@ -1,13 +1,9 @@
 import mongoose, { Schema } from "mongoose";
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
-const gallerySchema = new Schema(
+const masterSchema = new Schema(
     {
-        image: {
-            type: String, //cloudinary url
-            // required: true,
-        },
-
+       
         title: {
             type: String,
             required: true,
@@ -21,8 +17,9 @@ const gallerySchema = new Schema(
        
         type: {
             type: String,
-            enum:['gallery','rules'],
             required: true,
+            enum:['unit'],
+            default: "unit",
             index: true
         },
        
@@ -33,21 +30,13 @@ const gallerySchema = new Schema(
             default: "active",
             index: true
         },
-        bussinessId: {
-            type: Schema.Types.ObjectId,
-            ref: "Bussiness"
-        },
-        owner: {
-            type: Schema.Types.ObjectId,
-            ref: "Vendor"
-        }
-
+       
     },
     {
         timestamps: true
     }
 )
 
-gallerySchema.plugin(mongooseAggregatePaginate)
+masterSchema.plugin(mongooseAggregatePaginate)
 
-export const Gallery = mongoose.model("Gallery", gallerySchema)
+export const Master = mongoose.model("Master", masterSchema)

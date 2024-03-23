@@ -71,7 +71,7 @@ const getActiveItem = asyncHandler(async (req, res) => {
 })
 
 const addItem = asyncHandler(async (req, res) => {
-    const { bussinessId, title, description, rate, stock } = req.body
+    const { bussinessId, title, description, rate, stock ,unitId} = req.body
     const type = req.path.split("/")[1];
     const imageLocalPath = req.file?.filename
 
@@ -95,6 +95,7 @@ const addItem = asyncHandler(async (req, res) => {
         bussinessId,
         rate,
         stock,
+        unit:unitId,
         owner: req.vendor._id,
     })
 
@@ -131,7 +132,7 @@ const getItemById = asyncHandler(async (req, res) => {
 })
 
 const updateItem = asyncHandler(async (req, res) => {
-    const { Id, title, description, rate, stock } = req.body
+    const { Id, title, description, rate, stock,unitId } = req.body
     const imageLocalPath = req.file?.filename
     const type = req.path.split("/")[1];
 
@@ -167,7 +168,7 @@ const updateItem = asyncHandler(async (req, res) => {
                 type,
                 rate,
                 stock,
-               
+                unit:unitId
             }
         },
         { new: true }

@@ -1,4 +1,4 @@
-import mongoose, {Schema} from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const bussinessSchema = new Schema(
@@ -12,13 +12,13 @@ const bussinessSchema = new Schema(
             // required: true
         },
         title: {
-            type: String, 
+            type: String,
             required: true,
             trim: true,
             index: true
         },
         description: {
-            type: String, 
+            type: String,
             // required: true
         },
         address:
@@ -28,11 +28,11 @@ const bussinessSchema = new Schema(
             },
             state: {
                 type: String,
-              
+
             },
             street: {
                 type: String,
-              
+
             },
             area: {
                 type: String,
@@ -59,6 +59,25 @@ const bussinessSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: "Domain"
         }],
+        bussinessHour: [
+            {
+               
+                title: {
+                    type: String,
+
+                },
+                days: [],
+                startTime: {
+                    type: String,
+                    required: true,
+                },
+                endTime: {
+                    type: String,
+                    required: true,
+                },
+
+            }
+        ],
         isPublished: {
             type: Boolean,
             default: true
@@ -66,14 +85,14 @@ const bussinessSchema = new Schema(
         domain: {
             type: Schema.Types.ObjectId,
             ref: "Domain",
-            required:true
+            required: true
         },
         owner: {
             type: Schema.Types.ObjectId,
             ref: "Vendor"
         }
 
-    }, 
+    },
     {
         timestamps: true
     }

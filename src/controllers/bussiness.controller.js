@@ -31,7 +31,7 @@ const addBussinessInfo = asyncHandler(async (req, res) => {
 
     const bussiness = await Bussiness.create({
         title,
-        address:{
+        address: {
             city, state, street, area, pincode, latitude, longitude, fullAddress
         },
         domain: category,
@@ -89,20 +89,20 @@ const updateBussinessInfo = asyncHandler(async (req, res) => {
         return res
             .status(409)
             .json(new ApiError(409, `bussiness with same title of same category already exists`))
-    
+
     }
 
-   
+
     const bussiness = await Bussiness.findByIdAndUpdate(
         Id,
         {
             $set: {
                 title,
-                address:{
+                address: {
                     city, state, street, area, pincode, latitude, longitude, fullAddress
                 },
                 domain: category,
-               
+
             }
         },
         { new: true }
@@ -117,7 +117,7 @@ const updateBussinessInfo = asyncHandler(async (req, res) => {
 })
 
 const updateBussinesslogo = asyncHandler(async (req, res) => {
-    const { Id,description } = req.body
+    const { Id, description } = req.body
 
     if (!Id) {
         return res
@@ -136,14 +136,14 @@ const updateBussinesslogo = asyncHandler(async (req, res) => {
     if (bussinessImages.coverImage && bussinessImages.coverImage != '') {
         fs.unlinkSync(`public/bussinessImages/${bussinessImages.coverImage}`);
     }
-   
+
     const bussiness = await Bussiness.findByIdAndUpdate(
         Id,
         {
             $set: {
                 description,
-                brandLogo:brandLogoFile,
-                coverImage:coverImageFile
+                brandLogo: brandLogoFile,
+                coverImage: coverImageFile
             }
         },
         { new: true }
@@ -158,7 +158,7 @@ const updateBussinesslogo = asyncHandler(async (req, res) => {
 })
 
 const updateStatusBussiness = asyncHandler(async (req, res) => {
-    const {Id} = req.query
+    const { Id } = req.query
     if (!Id) {
         return res
             .status(400)
@@ -218,9 +218,9 @@ const getAllBussiness = asyncHandler(async (req, res) => {
 const getActiveBussiness = asyncHandler(async (req, res) => {
 
     const { limit = 200, startIndex = 0 } = req.body
-   
+
     const bussiness = await Bussiness.find()
-       .sort("-_id")
+        .sort("-_id")
         .skip(startIndex)
         .limit(limit)
         .exec();
@@ -236,21 +236,104 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
 const addAminities = asyncHandler(async (req, res) => {
     const { aminityId, bussinessId } = req.body
 
+
     if (!aminityId || !bussinessId) {
         return res
             .status(400)
             .json(new ApiError(400, "Aminity ID and Bussiness Id are required"))
     }
-  
+
     const activity = await Bussiness.findByIdAndUpdate(
         bussinessId,
         {
             // $addToSet: { amenities: aminityId }
             $set: { amenities: aminityId }
-    },  { new: true })
+        }, { new: true })
 
     return res.status(201).json(
         new ApiResponse(200, activity, `Aminities Added Successfully`)
+    )
+
+})
+
+const addBussinessHour = asyncHandler(async (req, res) => {
+    const { title, days, startTime, endTime, bussinessId } = req.body
+
+    if (!days || !bussinessId || !startTime || !endTime) {
+        return res
+            .status(400)
+            .json(new ApiError(400, "All fields are required"))
+    }
+   
+    // const nowdate = new Date;
+
+    const addBussinessHour = await Bussiness.findByIdAndUpdate(
+        bussinessId,
+        {
+            $push: {
+                bussinessHour: {
+                    title,
+                    days,
+                    startTime,
+                    endTime,
+                }
+            }
+
+        }, { new: true })
+
+    return res.status(201).json(
+        new ApiResponse(200, addBussinessHour, `Bussiness Hour Added Successfully`)
+    )
+
+})
+
+const updateBussinessHour = asyncHandler(async (req, res) => {
+    const { Id,title, days, startTime, endTime, bussinessId } = req.body
+
+    if (!days || !bussinessId || !startTime || !endTime) {
+        return res
+            .status(400)
+            .json(new ApiError(400, "All fields are required"))
+    }
+    const updateBussinessHour = await Bussiness.updateOne(
+        {_id:bussinessId, 'bussinessHour._id': { $eq: Id }},
+        {
+            $set: {
+                "bussinessHour.$": {
+                    title,
+                    days,
+                    startTime,
+                    endTime,
+                }
+            }
+
+        }, { new: true })
+
+    return res.status(201).json(
+        new ApiResponse(200, updateBussinessHour, `Bussiness Hour Added Successfully`)
+    )
+
+})
+
+const deleteBussinessHour = asyncHandler(async (req, res) => {
+    const { Id,bussinessId } = req.body
+
+    if (!Id || !bussinessId) {
+        return res
+            .status(400)
+            .json(new ApiError(400, "All fields are required"))
+    }
+    const deleteBussinessHour = await Bussiness.updateOne(
+        {_id:bussinessId},
+        {
+            $pull: {
+                bussinessHour: { _id:Id }
+            }
+
+        }, { new: true })
+
+    return res.status(201).json(
+        new ApiResponse(200, deleteBussinessHour, `Bussiness Hour Deleted Successfully`)
     )
 
 })
@@ -272,4 +355,7 @@ export {
     deleteBussiness,
     updateBussinesslogo,
     addAminities,
+    addBussinessHour,
+    updateBussinessHour,
+    deleteBussinessHour,
 }
