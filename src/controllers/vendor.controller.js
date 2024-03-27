@@ -100,6 +100,7 @@ const loginVendor = asyncHandler(async (req, res) => {
     }
 
     const vendor = await Vendor.findOne({
+        usertype:usertype,
         $or: [{ mobile }, { email }]
     }).select("-refreshToken")
 
@@ -136,6 +137,7 @@ const sendOTP = asyncHandler(async (req, res) => {
     }
 
     const vendor = await Vendor.findOne({
+        usertype:usertype,
         $or: [{ mobile }, { email }]
     })
 
@@ -184,6 +186,7 @@ const verifyOTP = asyncHandler(async (req, res) => {
     }
 
     const vendor = await Vendor.findOne({
+        usertype:usertype,
         $or: [{ mobile }, { email }]
     })
 
@@ -397,16 +400,16 @@ const updateVendorImage = asyncHandler(async (req, res) => {
 
 const updateVendorStatus = asyncHandler(async (req, res) => {
     const usertype = req.path.split("/")[1];
-    const { vendorId, status } = req.body
+    const { Id, status } = req.body
 
-    if (!vendorId && !status) {
+    if (!Id && !status) {
         return res
             .status(400)
             .json(new ApiError(400, "VendorId And Status are required"))
     }
 
     const vendor = await Vendor.findByIdAndUpdate(
-        vendorId,
+        Id,
         {
             $set: {
                 status: status
@@ -445,7 +448,7 @@ const getPaginateVendors = asyncHandler(async (req, res) => {
     const { limit=20, pageNumber= 0 } = req.body
     const usertype = req.path.split("/")[1];
     const result = {};
-    const totalPosts = await Vendor.countDocuments().exec();
+    const totalPosts = await Vendor.countDocuments({usertype:usertype}).exec();
     let startIndex = pageNumber * limit;
     const endIndex = (pageNumber + 1) * limit;
     result.totalPosts = totalPosts;
@@ -455,7 +458,7 @@ const getPaginateVendors = asyncHandler(async (req, res) => {
         limit: limit,
       };
     }
-    if (endIndex < (await Vendor.countDocuments().exec())) {
+    if (endIndex < (await Vendor.countDocuments({usertype:usertype}).exec())) {
       result.next = {
         pageNumber: pageNumber + 1,
         limit: limit,
