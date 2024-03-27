@@ -6,7 +6,11 @@ import {
     // updateActivity,
     updateStatusActivity,
     deleteActivity,
-    getActiveActivity
+    getActiveActivity,
+    getActivitySlots,
+    addSlot,
+    updateSlot,
+    deleteSlot,
    
 } from "../controllers/bussinessActivity.controller.js"
 import { verifyVendorJWT } from "../middlewares/auth.middleware.js"
@@ -27,6 +31,11 @@ router.route("/bussinessActivity/").get(verifyVendorJWT, getAllActivity)
     // .delete(deleteActivity)
     
     router.route("/bussinessActivity/active").get(verifyVendorJWT, getActiveActivity);
+
+    router.route("/bussinessActivity/slots").get(getActivitySlots)
+    .post(verifyVendorJWT,addSlot)
+    .patch(verifyVendorJWT,updateSlot)
+    .delete(verifyVendorJWT,deleteSlot);
     
    
 

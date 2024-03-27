@@ -12,10 +12,35 @@ const activitySchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: "Bussiness"
         },
-        // items: [{
-        //     type: Schema.Types.ObjectId,
-        //     ref: "Item"
-        // }],
+        slots: [ {
+               
+            title: {
+                type: String,
+
+            },
+            days: [],
+            startTime: {
+                type: String,
+                required: true,
+            },
+            endTime: {
+                type: String,
+                required: true,
+            },
+            maxseat: {
+                type: String,
+                required: true,
+            },
+            duration: {
+                type: String,
+              
+            },
+            rate: {
+                type: String,
+                required: true,
+            },
+
+        }],
         // foods: [{
         //     type: Schema.Types.ObjectId,
         //     ref: "Item"

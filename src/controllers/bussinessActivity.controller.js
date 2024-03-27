@@ -1,6 +1,6 @@
 // import mongoose, {isValidObjectId} from "mongoose"
 import { Activities } from "../models/activities.model.js"
-import {Bussiness} from "../models/bussiness.model.js"
+import { Bussiness } from "../models/bussiness.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
@@ -185,17 +185,121 @@ const deleteActivity = asyncHandler(async (req, res) => {
     // console.log(Id);
 
     const activity = await Activities.deleteMany(
-       {
-        owner:req.vendor._id,
-           _id:{ $in:Id}
-         },
+        {
+            owner: req.vendor._id,
+            _id: { $in: Id }
+        },
     )
 
     return res
-    .status(200)
-    .json(
-        new ApiResponse(200, activity, `Activities deleted successfully`)
+        .status(200)
+        .json(
+            new ApiResponse(200, activity, `Activities deleted successfully`)
+        )
+})
+
+const getActivitySlots = asyncHandler(async (req, res) => {
+
+    const { bussActivityId } = req.query
+    const activitySlots = await Activities.findById(bussActivityId).select(' slots')
+
+    if (!activitySlots) {
+        return res
+            .status(500)
+            .json(new ApiError(500, `Something went wrong while fetching slots`, error))
+    }
+
+    return res.status(201).json(
+        new ApiResponse(200, activitySlots, `Activity slots fetched Successfully`)
     )
+})
+
+const addSlot = asyncHandler(async (req, res) => {
+    const { title, days, startTime, endTime, maxseat, duration, rate, bussActivityId } = req.body
+
+    if (!days || !bussActivityId || !startTime || !endTime || !maxseat || !rate) {
+        return res
+            .status(400)
+            .json(new ApiError(400, "All fields are required"))
+    }
+
+    // const nowdate = new Date;
+
+    const addSlot = await Activities.findByIdAndUpdate(
+        bussActivityId,
+        {
+            $push: {
+                slots: {
+                    title,
+                    days,
+                    startTime,
+                    endTime,
+                    maxseat,
+                    duration,
+                    rate,
+                }
+            }
+
+        }, { new: true })
+
+    return res.status(201).json(
+        new ApiResponse(200, addSlot, `Activity Slot Added Successfully`)
+    )
+
+})
+
+const updateSlot = asyncHandler(async (req, res) => {
+    const { Id, title, days, startTime, endTime, maxseat, duration, rate, bussActivityId } = req.body
+
+    if (!Id || !days || !bussActivityId || !startTime || !endTime || !maxseat || !rate) {
+        return res
+            .status(400)
+            .json(new ApiError(400, "All fields are required"))
+    }
+    const updateSlot = await Activities.updateOne(
+        { _id: bussActivityId, 'slots._id': { $eq: Id } },
+        {
+            $set: {
+                "slots.$": {
+                    title,
+                    days,
+                    startTime,
+                    endTime,
+                    maxseat,
+                    duration,
+                    rate,
+                }
+            }
+
+        }, { new: true })
+
+    return res.status(201).json(
+        new ApiResponse(200, updateSlot, `Slot detail Updated Successfully`)
+    )
+
+})
+
+const deleteSlot = asyncHandler(async (req, res) => {
+    const { Id, bussActivityId } = req.body
+
+    if (!Id || !bussActivityId) {
+        return res
+            .status(400)
+            .json(new ApiError(400, "All fields are required"))
+    }
+    const deleteSlot = await Activities.updateOne(
+        { _id: bussActivityId },
+        {
+            $pull: {
+                slots: { _id: Id }
+            }
+
+        }, { new: true })
+
+    return res.status(201).json(
+        new ApiResponse(200, deleteSlot, `Slot Deleted Successfully`)
+    )
+
 })
 
 export {
@@ -206,5 +310,9 @@ export {
     // updateActivity,
     updateStatusActivity,
     deleteActivity,
-  
+    getActivitySlots,
+    addSlot,
+    updateSlot,
+    deleteSlot,
+
 }
