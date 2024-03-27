@@ -88,6 +88,12 @@ const vendorSchema = new Schema(
             
         },
 
+        usertype: {
+            type: String,
+            enum: ['admin', 'user', 'vendor'],
+            index: true
+        },
+
         status: {
             type: String,
             enum: ['active', 'inactive', 'block','delete'],

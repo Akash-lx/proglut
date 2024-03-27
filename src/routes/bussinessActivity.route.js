@@ -22,13 +22,11 @@ const router = Router();
 router.route("/bussinessActivity/").get(verifyVendorJWT, getAllActivity)
     .post(verifyVendorJWT, addActivity)
     .delete(verifyVendorJWT, deleteActivity);
-    // .patch(itemUpload.single("image"), updateActivity);
     
     router
     .route("/bussinessActivity/detail")
     .get(getActivityById)
     .patch(updateStatusActivity);
-    // .delete(deleteActivity)
     
     router.route("/bussinessActivity/active").get(verifyVendorJWT, getActiveActivity);
 

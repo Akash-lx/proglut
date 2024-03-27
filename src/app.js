@@ -18,7 +18,7 @@ app.use(cookieParser())
 
 //routes import
 import vendorRouter from './routes/vendor.route.js'
-import userRouter from './routes/user.route.js'
+// import userRouter from './routes/user.route.js'
 import domainRouter from './routes/domain.route.js'
 import bussinessRouter from './routes/bussiness.route.js'
 import galleryRouter from './routes/gallery.route.js'
@@ -33,8 +33,8 @@ app.get('/',(req,res) =>{
     res.send('Welcome to Progult');
 })
 
-app.use("/api/v1/vendor", vendorRouter)
-app.use("/api/v1/user", userRouter)
+app.use("/api/v1", vendorRouter)
+// app.use("/api/v1/user", userRouter)
 app.use("/api/v1/domain", domainRouter)
 app.use("/api/v1/bussiness", bussinessRouter)
 app.use("/api/v1", galleryRouter)

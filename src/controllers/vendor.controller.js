@@ -36,7 +36,7 @@ const registerVendor = asyncHandler(async (req, res) => {
     // remove password and refresh token field from response
     // check for vendor creation
     // return res
-
+    const usertype = req.path.split("/")[1];
 
     const { fullName, email, mobile, gender } = req.body
 
@@ -56,7 +56,7 @@ const registerVendor = asyncHandler(async (req, res) => {
     if (existedVendor) {
         return res
             .status(409)
-            .json(new ApiError(409, "Vendor with email or mobile already exists"))
+            .json(new ApiError(409, `${usertype} with email or mobile already exists`))
         // throw new ApiError(409, "Vendor with email or mobile already exists")
     }
 
@@ -64,7 +64,8 @@ const registerVendor = asyncHandler(async (req, res) => {
         fullName,
         email,
         gender: gender,
-        mobile
+        mobile,
+        usertype
     })
 
     const createdVendor = await Vendor.findById(vendor._id).select(
@@ -74,12 +75,12 @@ const registerVendor = asyncHandler(async (req, res) => {
     if (!createdVendor) {
         return res
             .status(500)
-            .json(new ApiError(500, "Something went wrong while registering the vendor", error))
+            .json(new ApiError(500, `Something went wrong while registering the ${usertype}`, error))
         // throw new ApiError(500, "Something went wrong while registering the vendor")
     }
 
     return res.status(201).json(
-        new ApiResponse(200, createdVendor, "Vendor registered Successfully")
+        new ApiResponse(200, createdVendor, `${usertype} registered Successfully`)
     )
 
 })
@@ -89,7 +90,7 @@ const loginVendor = asyncHandler(async (req, res) => {
     // req body -> data
     // mobile or email
     //find the vendor
-
+    const usertype = req.path.split("/")[1];
     const { email, mobile } = req.body
 
     if (!mobile && !email) {
@@ -100,17 +101,17 @@ const loginVendor = asyncHandler(async (req, res) => {
 
     const vendor = await Vendor.findOne({
         $or: [{ mobile }, { email }]
-    })
+    }).select("-refreshToken")
 
     if (!vendor) {
         return res
             .status(404)
-            .json(new ApiError(404, "Vendor does not exist"))
+            .json(new ApiError(404, `${usertype} does not exist`))
 
     } else if (vendor.status != 'active') {
         return res
             .status(401)
-            .json(new ApiError(404, `Vendor is ${vendor.status} ! please contact admin`))
+            .json(new ApiError(404, `${usertype} is ${vendor.status} ! please contact admin`))
     }
 
     return res
@@ -118,16 +119,14 @@ const loginVendor = asyncHandler(async (req, res) => {
         .json(
             new ApiResponse(
                 200,
-                {
-                    vendor
-                },
-                "Vendor Found Successfully"
+                vendor,
+                `${usertype} Found Successfully`
             )
         )
 })
 
 const sendOTP = asyncHandler(async (req, res) => {
-
+    const usertype = req.path.split("/")[1];
     const { email, mobile } = req.body
 
     if (!mobile && !email) {
@@ -143,11 +142,11 @@ const sendOTP = asyncHandler(async (req, res) => {
     if (!vendor) {
         return res
             .status(404)
-            .json(new ApiError(404, "Vendor does not exist"))
+            .json(new ApiError(404, `${usertype} does not exist`))
     } else if (vendor.status != 'active') {
         return res
             .status(401)
-            .json(new ApiError(404, `Vendor is ${vendor.status} ! please contact admin`))
+            .json(new ApiError(404, `${usertype} is ${vendor.status} ! please contact admin`))
     }
 
 
@@ -170,7 +169,7 @@ const verifyOTP = asyncHandler(async (req, res) => {
     // req body -> data
     // mobile or email
     //find the vendor
-
+    const usertype = req.path.split("/")[1];
     const { email, mobile, otp } = req.body
 
     if (!mobile && !email) {
@@ -191,11 +190,11 @@ const verifyOTP = asyncHandler(async (req, res) => {
     if (!vendor) {
         return res
             .status(404)
-            .json(new ApiError(404, "Vendor does not exist"))
+            .json(new ApiError(404, `${usertype} does not exist`))
     } else if (vendor.status != 'active') {
         return res
             .status(401)
-            .json(new ApiError(404, `Vendor is ${vendor.status} ! please contact admin`))
+            .json(new ApiError(404, `${usertype} is ${vendor.status} ! please contact admin`))
     }
 
 
@@ -211,7 +210,7 @@ const verifyOTP = asyncHandler(async (req, res) => {
 
     const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(vendor._id)
 
-    const loggedInVendor = await Vendor.findById(vendor._id).select("-otp -refreshToken")
+    const loggedInVendor = await Vendor.findById(vendor._id).select("-otp")
 
     const options = {
         httpOnly: true,
@@ -225,16 +224,15 @@ const verifyOTP = asyncHandler(async (req, res) => {
         .json(
             new ApiResponse(
                 200,
-                {
-                    vendor: loggedInVendor, accessToken, refreshToken
-                },
-                "Vendor logged In Successfully"
+                vendor, 
+                `${usertype} logged In Successfully`
             )
         )
 
 })
 
 const logoutVendor = asyncHandler(async (req, res) => {
+    const usertype = req.path.split("/")[1];
     await Vendor.findByIdAndUpdate(
         req.vendor._id,
         {
@@ -256,7 +254,7 @@ const logoutVendor = asyncHandler(async (req, res) => {
         .status(200)
         .clearCookie("accessToken", options)
         .clearCookie("refreshToken", options)
-        .json(new ApiResponse(200, {}, "Vendor logged Out"))
+        .json(new ApiResponse(200, {}, `${usertype} logged Out`))
 })
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
@@ -319,18 +317,19 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 })
 
 const getCurrentVendor = asyncHandler(async (req, res) => {
+    const usertype = req.path.split("/")[1];
     return res
         .status(200)
         .json(new ApiResponse(
             200,
             req.vendor,
-            "Vendor fetched successfully"
+            `${usertype} fetched successfully`
         ))
 })
 
 const updateVendorProfile = asyncHandler(async (req, res) => {
     const { fullName, gender, city, state, street, area, pincode, latitude, longitude } = req.body
-
+    const usertype = req.path.split("/")[1];
     if (!fullName || !gender) {
         return res
             .status(400)
@@ -361,13 +360,13 @@ const updateVendorProfile = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .json(new ApiResponse(200, vendor, "Vendor details updated successfully"))
+        .json(new ApiResponse(200, vendor, `${usertype} details updated successfully`))
 });
 
 const updateVendorImage = asyncHandler(async (req, res) => {
     // console.log(req.file);
     const avatarLocalPath = req.file?.filename
-
+    const usertype = req.path.split("/")[1];
     if (!avatarLocalPath) {
         return res
             .status(400)
@@ -397,7 +396,7 @@ const updateVendorImage = asyncHandler(async (req, res) => {
 })
 
 const updateVendorStatus = asyncHandler(async (req, res) => {
-
+    const usertype = req.path.split("/")[1];
     const { vendorId, status } = req.body
 
     if (!vendorId && !status) {
@@ -419,15 +418,15 @@ const updateVendorStatus = asyncHandler(async (req, res) => {
     return res
         .status(200)
         .json(
-            new ApiResponse(200, vendor, "Vendor Status updated successfully")
+            new ApiResponse(200, vendor, `${usertype} Status updated successfully`)
         )
 })
 
 const getVendorsList = asyncHandler(async (req, res) => {
-
+    const usertype = req.path.split("/")[1];
     const { limit=200, startIndex= 0 } = req.body
    
-    const vendor = await Vendor.find()
+    const vendor = await Vendor.find({usertype:usertype})
                          .select("-otp -accessToken -refreshToken")
                          .sort("-_id")
                          .skip(startIndex)
@@ -437,14 +436,14 @@ const getVendorsList = asyncHandler(async (req, res) => {
     return res
         .status(200)
         .json(
-            new ApiResponse(200, vendor, "Vendor List Fetched successfully")
+            new ApiResponse(200, vendor, `${usertype} List Fetched successfully`)
         )
 })
 
 const getPaginateVendors = asyncHandler(async (req, res) => {
 
     const { limit=20, pageNumber= 0 } = req.body
- 
+    const usertype = req.path.split("/")[1];
     const result = {};
     const totalPosts = await Vendor.countDocuments().exec();
     let startIndex = pageNumber * limit;
@@ -462,7 +461,7 @@ const getPaginateVendors = asyncHandler(async (req, res) => {
         limit: limit,
       };
     }
-    result.data = await Vendor.find()
+    result.data = await Vendor.find({usertype:usertype})
       .sort("-_id")
       .skip(startIndex)
       .limit(limit)
@@ -471,7 +470,7 @@ const getPaginateVendors = asyncHandler(async (req, res) => {
     return res
         .status(200)
         .json(
-            new ApiResponse(200, result, "Vendor List Fetched successfully")
+            new ApiResponse(200, result, `${usertype} List Fetched successfully`)
         )
  
 })
