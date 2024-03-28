@@ -111,8 +111,8 @@ const loginVendor = asyncHandler(async (req, res) => {
 
     } else if (vendor.status != 'active') {
         return res
-            .status(401)
-            .json(new ApiError(404, `${usertype} is ${vendor.status} ! please contact admin`))
+            .status(403)
+            .json(new ApiError(403, `${usertype} is ${vendor.status} ! please contact admin`))
     }
 
     return res
@@ -147,8 +147,8 @@ const sendOTP = asyncHandler(async (req, res) => {
             .json(new ApiError(404, `${usertype} does not exist`))
     } else if (vendor.status != 'active') {
         return res
-            .status(401)
-            .json(new ApiError(404, `${usertype} is ${vendor.status} ! please contact admin`))
+            .status(403)
+            .json(new ApiError(403, `${usertype} is ${vendor.status} ! please contact admin`))
     }
 
 
@@ -196,8 +196,8 @@ const verifyOTP = asyncHandler(async (req, res) => {
             .json(new ApiError(404, `${usertype} does not exist`))
     } else if (vendor.status != 'active') {
         return res
-            .status(401)
-            .json(new ApiError(404, `${usertype} is ${vendor.status} ! please contact admin`))
+            .status(403)
+            .json(new ApiError(403, `${usertype} is ${vendor.status} ! please contact admin`))
     }
 
 

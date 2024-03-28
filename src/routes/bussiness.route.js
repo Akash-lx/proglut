@@ -11,7 +11,9 @@ import {
     addAminities,
     addBussinessHour,
     updateBussinessHour,
-    deleteBussinessHour
+    deleteBussinessHour,
+    getAllBussinesses,
+    getMyBussiness
 } from "../controllers/bussiness.controller.js"
 import { verifyVendorJWT } from "../middlewares/auth.middleware.js"
 import { bussinessUpload } from "../middlewares/multer.middleware.js"
@@ -41,6 +43,8 @@ router
 // .delete(deleteBussiness)
 
 router.route("/active").get(getActiveBussiness);
+router.route("/my").get(verifyVendorJWT,getMyBussiness);
+router.route("/all").get(getAllBussinesses);
 
 router.route("/aminities/")
     // .get(verifyVendorJWT, getAllActivity)

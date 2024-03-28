@@ -51,10 +51,7 @@ const bussinessSchema = new Schema(
             }
         },
 
-        activities: [{
-            type: Schema.Types.ObjectId,
-            ref: "Activities"
-        }],
+       
         amenities: [{
             type: Schema.Types.ObjectId,
             ref: "Domain"

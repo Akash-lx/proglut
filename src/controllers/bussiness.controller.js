@@ -1,4 +1,4 @@
-// import mongoose, {isValidObjectId} from "mongoose"
+import mongoose, { isValidObjectId } from "mongoose"
 import { Bussiness } from "../models/bussiness.model.js"
 // import {User} from "../models/user.model.js"
 import { ApiError } from "../utils/ApiError.js"
@@ -232,6 +232,138 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
         )
 })
 
+const getMyBussiness = asyncHandler(async (req, res) => {
+
+    const bussiness = await Bussiness.aggregate([
+        {
+            $match: {
+                owner: new mongoose.Types.ObjectId(req.vendor._id)
+            }
+        },
+        // {
+        //     $lookup: {
+        //         from: "videos",
+        //         localField: "watchHistory",
+        //         foreignField: "_id",
+        //         as: "watchHistory",
+        //         pipeline: [
+        //             {
+        //                 $lookup: {
+        //                     from: "vendors",
+        //                     localField: "owner",
+        //                     foreignField: "_id",
+        //                     as: "owner",
+        //                     pipeline: [
+        //                         {
+        //                             $project: {
+        //                                 fullName: 1,
+        //                                 mobile: 1,
+        //                                 avatar: 1
+        //                             }
+        //                         }
+        //                     ]
+        //                 }
+        //             },
+        //             {
+        //                 $addFields:{
+        //                     owner:{
+        //                         $first: "$owner"
+        //                     }
+        //                 }
+        //             }
+        //         ]
+        //     }
+        // }
+        {
+            $addFields: {
+                rating: "",
+                reviewcount: "",
+            }
+        },
+        {
+            $project: {
+                coverImage: 1,
+                brandLogo: 1,
+                title: 1,
+                address: 1,
+                isPublished: 1,
+                rating: 1,
+                reviewcount: 1,
+            }
+        }
+    ])
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, bussiness, `bussiness List Fetched successfully`)
+        )
+})
+
+const getAllBussinesses = asyncHandler(async (req, res) => {
+    // const {mobile} = req.params
+
+    const bussiness = await Bussiness.aggregate([
+
+        {
+            $lookup: {
+                from: "domains",
+                localField: "amenities",
+                foreignField: "_id",
+                as: "amenities_list",
+                pipeline: [{
+                    $project: {
+                        title: 1,
+                        image: 1,
+                        description: 1,
+                    }
+                }
+                ]
+            }
+        },
+        {
+            $lookup: {
+                from: "domains",
+                localField: "domain",
+                foreignField: "_id",
+                as: "domain",
+                pipeline: [{
+                    $project: {
+                        title: 1,
+                    }
+                }
+                ]
+            },
+
+
+        },
+        {
+            $project: {
+                coverImage: 1,
+                brandLogo: 1,
+                title: 1,
+                description: 1,
+                address: 1,
+                amenities: 1,
+                isPublished: 1,
+                domain_name: 1,
+
+            }
+        }
+    ])
+
+    // if (!channel?.length) {
+    //     throw new ApiError(404, "channel does not exists")
+    // }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, bussiness, "bussiness fetched successfully")
+        )
+})
+
+
 
 const addAminities = asyncHandler(async (req, res) => {
     const { aminityId, bussinessId } = req.body
@@ -264,7 +396,7 @@ const addBussinessHour = asyncHandler(async (req, res) => {
             .status(400)
             .json(new ApiError(400, "All fields are required"))
     }
-   
+
     // const nowdate = new Date;
 
     const addBussinessHour = await Bussiness.findByIdAndUpdate(
@@ -288,7 +420,7 @@ const addBussinessHour = asyncHandler(async (req, res) => {
 })
 
 const updateBussinessHour = asyncHandler(async (req, res) => {
-    const { Id,title, days, startTime, endTime, bussinessId } = req.body
+    const { Id, title, days, startTime, endTime, bussinessId } = req.body
 
     if (!days || !bussinessId || !startTime || !endTime) {
         return res
@@ -296,7 +428,7 @@ const updateBussinessHour = asyncHandler(async (req, res) => {
             .json(new ApiError(400, "All fields are required"))
     }
     const updateBussinessHour = await Bussiness.updateOne(
-        {_id:bussinessId, 'bussinessHour._id': { $eq: Id }},
+        { _id: bussinessId, 'bussinessHour._id': { $eq: Id } },
         {
             $set: {
                 "bussinessHour.$": {
@@ -316,7 +448,7 @@ const updateBussinessHour = asyncHandler(async (req, res) => {
 })
 
 const deleteBussinessHour = asyncHandler(async (req, res) => {
-    const { Id,bussinessId } = req.body
+    const { Id, bussinessId } = req.body
 
     if (!Id || !bussinessId) {
         return res
@@ -324,10 +456,10 @@ const deleteBussinessHour = asyncHandler(async (req, res) => {
             .json(new ApiError(400, "All fields are required"))
     }
     const deleteBussinessHour = await Bussiness.updateOne(
-        {_id:bussinessId},
+        { _id: bussinessId },
         {
             $pull: {
-                bussinessHour: { _id:Id }
+                bussinessHour: { _id: Id }
             }
 
         }, { new: true })
@@ -358,4 +490,6 @@ export {
     addBussinessHour,
     updateBussinessHour,
     deleteBussinessHour,
+    getAllBussinesses,
+    getMyBussiness,
 }
