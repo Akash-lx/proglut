@@ -219,7 +219,9 @@ const verifyOTP = asyncHandler(async (req, res) => {
         httpOnly: true,
         secure: true
     }
-
+    // Object.assign(loggedInVendor, {accessToken: accessToken});
+    // vendor['accessToken'] = accessToken;
+// console.log(loggedInVendor);
     return res
         .status(200)
         .cookie("accessToken", accessToken, options)
@@ -228,7 +230,8 @@ const verifyOTP = asyncHandler(async (req, res) => {
             new ApiResponse(
                 200,
                 vendor, 
-                `${usertype} logged In Successfully`
+                `${usertype} logged In Successfully`,
+               {"accessToken":accessToken}
             )
         )
 

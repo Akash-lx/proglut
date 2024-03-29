@@ -3,10 +3,7 @@ import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const eventSchema = new Schema(
     {
-        coverImage: {
-            type: String, //cloudinary url
-            // required: true
-        },
+        coverImages: [],
 
         title: {
             type: String,
@@ -42,6 +39,9 @@ const eventSchema = new Schema(
             },
             longitude: {
                 type: String,
+            },
+            fullAddress: {
+                type: String,
             }
         },
 
@@ -51,12 +51,29 @@ const eventSchema = new Schema(
             index: true
         },
         dateTime: {
-            type: Object,
-            index: true,
+            startDate: {
+                type: Date,
+            },
+            endDate: {
+                type: Date,
+              
+            },
+            startTime: {
+                type: String,
+              
+            },
+            endTime: {
+                type: String,
+            },
+           
         },
         isPublished: {
             type: Boolean,
             default: true
+        },
+        bussinessId: {
+            type: Schema.Types.ObjectId,
+            ref: "Bussiness"
         },
         owner: {
             type: Schema.Types.ObjectId,

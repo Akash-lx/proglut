@@ -1,4 +1,4 @@
-// import mongoose, {isValidObjectId} from "mongoose"
+import mongoose, {isValidObjectId} from "mongoose"
 import { Event } from "../models/event.model.js"
 // import {User} from "../models/user.model.js"
 import { ApiError } from "../utils/ApiError.js"
@@ -9,32 +9,42 @@ import fs from "fs"
 
 
 const addEventInfo = asyncHandler(async (req, res) => {
-    const { title, city, state, street, area, pincode, latitude, longitude, fullAddress, category } = req.body
+    const { title, city, state, street, area, pincode, latitude, longitude, fullAddress, startDate, endDate, startTime, endTime, entryFee, description } = req.body
 
-    if (!title && !category) {
+    if (!title) {
         return res
             .status(400)
-            .json(new ApiError(400, "category and title are required"))
+            .json(new ApiError(400, "title is required"))
     }
 
-    const existedEvent = await Event.findOne({
-        domain: category,
-        title: title,
-        owner: req.vendor._id,
-    })
-
-    if (existedEvent) {
+    if (!startDate || !endDate || !startTime || !endTime) {
         return res
-            .status(409)
-            .json(new ApiError(409, `Event with same title of same category already exists`))
+            .status(400)
+            .json(new ApiError(400, "Date and Time fileds are required"))
     }
+
+    // const existedEvent = await Event.findOne({
+    //     domain: category,
+    //     title: title,
+    //     owner: req.vendor._id,
+    // })
+
+    // if (existedEvent) {
+    //     return res
+    //         .status(409)
+    //         .json(new ApiError(409, `Event with same title of same category already exists`))
+    // }
 
     const event = await Event.create({
         title,
-        address:{
+        address: {
             city, state, street, area, pincode, latitude, longitude, fullAddress
         },
-        domain: category,
+        dateTime: {
+            startDate, endDate, startTime, endTime
+        },
+        entryFee,
+        description,
         owner: req.vendor._id,
     })
 
@@ -48,7 +58,7 @@ const addEventInfo = asyncHandler(async (req, res) => {
     }
 
     return res.status(201).json(
-        new ApiResponse(200, createdEvent, `event Added Successfully`)
+        new ApiResponse(200, createdEvent, `Event Created Successfully`)
     )
 
 })
@@ -70,39 +80,33 @@ const getEventById = asyncHandler(async (req, res) => {
 })
 
 const updateEventInfo = asyncHandler(async (req, res) => {
-    const { Id, title, city, state, street, area, pincode, latitude, longitude, fullAddress, category } = req.body
+    const { Id, title, city, state, street, area, pincode, latitude, longitude, fullAddress, startDate, endDate, startTime, endTime, entryFee, description } = req.body
 
-    if (!title && !category) {
+    if (!title) {
         return res
             .status(400)
-            .json(new ApiError(400, "category and title are required"))
+            .json(new ApiError(400, "title is required"))
     }
 
-    const existedEvent = await Event.findOne({
-        _id: { $ne: Id },
-        domain: category,
-        owner: req.vendor._id,
-        title: title
-    })
-
-    if (existedEvent) {
+    if (!startDate || !endDate || !startTime || !endTime) {
         return res
-            .status(409)
-            .json(new ApiError(409, `event with same title of same category already exists`))
-    
+            .status(400)
+            .json(new ApiError(400, "Date and Time fileds are required"))
     }
 
-   
     const event = await Event.findByIdAndUpdate(
         Id,
         {
             $set: {
                 title,
-                address:{
+                address: {
                     city, state, street, area, pincode, latitude, longitude, fullAddress
                 },
-                domain: category,
-               
+                dateTime: {
+                    startDate, endDate, startTime, endTime
+                },
+                entryFee,
+                description,
             }
         },
         { new: true }
@@ -111,13 +115,13 @@ const updateEventInfo = asyncHandler(async (req, res) => {
     return res
         .status(200)
         .json(
-            new ApiResponse(200, event, `event updated successfully`)
+            new ApiResponse(200, event, `Event detail updated successfully`)
         )
 
 })
 
 const updateEventlogo = asyncHandler(async (req, res) => {
-    const { Id,description } = req.body
+    const { Id } = req.body
 
     if (!Id) {
         return res
@@ -125,25 +129,20 @@ const updateEventlogo = asyncHandler(async (req, res) => {
             .json(new ApiError(400, "Id is required"))
     }
 
-    const brandLogoFile = req.files?.brandLogo[0]?.filename;
-    const coverImageFile = req.files?.coverImage[0]?.filename;
+    const coverImageFile = req.files?.coverImages[0]?.filename;
 
-    const eventImages = await Event.findById(Id).select("brandLogo coverImage");
+    const eventImages = await Event.findById(Id).select("coverImages");
 
-    if (eventImages.brandLogo && eventImages.brandLogo != '') {
-        fs.unlinkSync(`public/eventImages/${eventImages.brandLogo}`);
+    if (eventImages.coverImages && eventImages.coverImages != '') {
+        fs.unlinkSync(`public/eventImages/${eventImages.coverImages}`);
     }
-    if (eventImages.coverImage && eventImages.coverImage != '') {
-        fs.unlinkSync(`public/eventImages/${eventImages.coverImage}`);
-    }
-   
+
     const event = await Event.findByIdAndUpdate(
         Id,
         {
             $set: {
                 description,
-                brandLogo:brandLogoFile,
-                coverImage:coverImageFile
+                coverImages: coverImageFile
             }
         },
         { new: true }
@@ -152,35 +151,35 @@ const updateEventlogo = asyncHandler(async (req, res) => {
     return res
         .status(200)
         .json(
-            new ApiResponse(200, event, `event logo updated successfully`)
+            new ApiResponse(200, event, `Event images updated successfully`)
         )
 
 })
 
-const updateStatusEvent = asyncHandler(async (req, res) => {
-    const {Id} = req.query
-    if (!Id) {
-        return res
-            .status(400)
-            .json(new ApiError(400, "Id is required"))
-    }
+// const updateStatusEvent = asyncHandler(async (req, res) => {
+//     const { Id } = req.query
+//     if (!Id) {
+//         return res
+//             .status(400)
+//             .json(new ApiError(400, "Id is required"))
+//     }
 
-    const event = await Event.findByIdAndUpdate(
-        Id,
-        {
-            $set: {
-                isPublished: !isPublished
-            }
-        },
-        { new: true }
-    ).select()
+//     const event = await Event.findByIdAndUpdate(
+//         Id,
+//         {
+//             $set: {
+//                 isPublished: !isPublished
+//             }
+//         },
+//         { new: true }
+//     ).select()
 
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(200, event, `event Status updated successfully`)
-        )
-})
+//     return res
+//         .status(200)
+//         .json(
+//             new ApiResponse(200, event, `event Status updated successfully`)
+//         )
+// })
 
 
 const getAllEvent = asyncHandler(async (req, res) => {
@@ -218,9 +217,9 @@ const getAllEvent = asyncHandler(async (req, res) => {
 const getActiveEvent = asyncHandler(async (req, res) => {
 
     const { limit = 200, startIndex = 0 } = req.body
-   
+
     const event = await Event.find()
-       .sort("-_id")
+        .sort("-_id")
         .skip(startIndex)
         .limit(limit)
         .exec();
@@ -232,28 +231,76 @@ const getActiveEvent = asyncHandler(async (req, res) => {
         )
 })
 
+const getMyEvent = asyncHandler(async (req, res) => {
 
-const addAminities = asyncHandler(async (req, res) => {
-    const { aminityId, eventId } = req.body
 
-    if (!aminityId || !eventId) {
-        return res
-            .status(400)
-            .json(new ApiError(400, "Aminity ID and Event Id are required"))
-    }
-  
-    const activity = await Event.findByIdAndUpdate(
-        eventId,
+    const event = await Event.aggregate([
         {
-            // $addToSet: { amenities: aminityId }
-            $set: { amenities: aminityId }
-    },  { new: true })
+            $match: {
+                owner: new mongoose.Types.ObjectId(req.vendor._id)
+            }
+        },
+        {
+            $lookup: {
+                from: "reviews",
+                localField: "_id",
+                foreignField: "eventId",
+                as: "reviews"
+            }
+        },
+        {
+            $addFields: {
+                reviewcount: {
+                    $size: "$reviews"
+                },
+                rating: {
+                    $avg: "$reviews.rating"
+                },
 
-    return res.status(201).json(
-        new ApiResponse(200, activity, `Aminities Added Successfully`)
-    )
+            }
+        },
+        {
+            $project: {
+                entryFee:1,
+                dateTime:1,
+                coverImages: 1,
+                title: 1,
+                address: 1,
+                isPublished: 1,
+                rating: 1,
+                reviewcount: 1,
+            }
+        }
+    ])
 
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, event, `bussiness List Fetched successfully`)
+        )
 })
+
+// const addAminities = asyncHandler(async (req, res) => {
+//     const { aminityId, eventId } = req.body
+
+//     if (!aminityId || !eventId) {
+//         return res
+//             .status(400)
+//             .json(new ApiError(400, "Aminity ID and Event Id are required"))
+//     }
+
+//     const activity = await Event.findByIdAndUpdate(
+//         eventId,
+//         {
+//             // $addToSet: { amenities: aminityId }
+//             $set: { amenities: aminityId }
+//         }, { new: true })
+
+//     return res.status(201).json(
+//         new ApiResponse(200, activity, `Aminities Added Successfully`)
+//     )
+
+// })
 
 
 const deleteEvent = asyncHandler(async (req, res) => {
@@ -268,8 +315,9 @@ export {
     addEventInfo,
     getEventById,
     updateEventInfo,
-    updateStatusEvent,
+    // updateStatusEvent,
     deleteEvent,
     updateEventlogo,
-    addAminities,
+    getMyEvent,
+    // addAminities,
 }

@@ -13,7 +13,9 @@ import {
     updateBussinessHour,
     deleteBussinessHour,
     getAllBussinesses,
-    getMyBussiness
+    getMyBussiness,
+    getReviews,
+    addReview,
 } from "../controllers/bussiness.controller.js"
 import { verifyVendorJWT } from "../middlewares/auth.middleware.js"
 import { bussinessUpload } from "../middlewares/multer.middleware.js"
@@ -43,7 +45,7 @@ router
 // .delete(deleteBussiness)
 
 router.route("/active").get(getActiveBussiness);
-router.route("/my").get(verifyVendorJWT,getMyBussiness);
+router.route("/my").get(verifyVendorJWT, getMyBussiness);
 router.route("/all").get(getAllBussinesses);
 
 router.route("/aminities/")
@@ -57,6 +59,11 @@ router.route("/slots/")
     .post(verifyVendorJWT, addBussinessHour)
     .delete(verifyVendorJWT, deleteBussinessHour)
     .patch(verifyVendorJWT, updateBussinessHour);
+
+router.route("/review/")
+    .get(getReviews)
+    .post(verifyVendorJWT, addReview);
+    
 
 
 export default router

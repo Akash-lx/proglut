@@ -15,9 +15,13 @@ const reviewSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: "Bussiness"
         },
+        eventId: {
+            type: Schema.Types.ObjectId,
+            ref: "Event"
+        },
         owner: {
             type: Schema.Types.ObjectId,
-            ref: "User"
+            ref: "Vendor"
         }
     },
     {

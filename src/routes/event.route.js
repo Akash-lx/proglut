@@ -4,11 +4,12 @@ import {
 addEventInfo,
 getEventById,
 updateEventInfo,
-updateStatusEvent,
-deleteEvent,
+// updateStatusEvent,
+// deleteEvent,
 getActiveEvent,
 updateEventlogo,
-addAminities
+getMyEvent,
+// addAminities
 } from "../controllers/event.controller.js"
 import {verifyVendorJWT} from "../middlewares/auth.middleware.js"
 import {bussinessUpload} from "../middlewares/multer.middleware.js"
@@ -33,17 +34,18 @@ router.route("/logo").patch( bussinessUpload.fields([
 
 router
     .route("/detail")
-    .get(getEventById)
-    .patch(updateStatusEvent);
+    .get(getEventById);
+    // .patch(updateStatusEvent);
     // .delete(deleteEvent)
 
 router.route("/active").get(getActiveEvent);
+router.route("/my").get(verifyVendorJWT,getMyEvent);
 
-router.route("/aminities/")
-// .get(verifyVendorJWT, getAllActivity)
-    .post(verifyVendorJWT, addAminities);
-    // .delete(verifyVendorJWT, deleteActivity);
-    // .patch(itemUpload.single("image"), updateActivity);
+// router.route("/aminities/")
+// // .get(verifyVendorJWT, getAllActivity)
+//     .post(verifyVendorJWT, addAminities);
+//     // .delete(verifyVendorJWT, deleteActivity);
+//     // .patch(itemUpload.single("image"), updateActivity);
 
 
 export default router

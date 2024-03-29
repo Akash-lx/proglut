@@ -1,6 +1,7 @@
 import mongoose, { isValidObjectId } from "mongoose"
 import { Bussiness } from "../models/bussiness.model.js"
 // import {User} from "../models/user.model.js"
+import { Review } from "../models/reviews.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
@@ -234,50 +235,30 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
 
 const getMyBussiness = asyncHandler(async (req, res) => {
 
+
     const bussiness = await Bussiness.aggregate([
         {
             $match: {
                 owner: new mongoose.Types.ObjectId(req.vendor._id)
             }
         },
-        // {
-        //     $lookup: {
-        //         from: "videos",
-        //         localField: "watchHistory",
-        //         foreignField: "_id",
-        //         as: "watchHistory",
-        //         pipeline: [
-        //             {
-        //                 $lookup: {
-        //                     from: "vendors",
-        //                     localField: "owner",
-        //                     foreignField: "_id",
-        //                     as: "owner",
-        //                     pipeline: [
-        //                         {
-        //                             $project: {
-        //                                 fullName: 1,
-        //                                 mobile: 1,
-        //                                 avatar: 1
-        //                             }
-        //                         }
-        //                     ]
-        //                 }
-        //             },
-        //             {
-        //                 $addFields:{
-        //                     owner:{
-        //                         $first: "$owner"
-        //                     }
-        //                 }
-        //             }
-        //         ]
-        //     }
-        // }
+        {
+            $lookup: {
+                from: "reviews",
+                localField: "_id",
+                foreignField: "bussinessId",
+                as: "reviews"
+            }
+        },
         {
             $addFields: {
-                rating: "",
-                reviewcount: "",
+                reviewcount: {
+                    $size: "$reviews"
+                },
+                rating: {
+                    $avg: "$reviews.rating"
+                },
+
             }
         },
         {
@@ -476,6 +457,121 @@ const deleteBussiness = asyncHandler(async (req, res) => {
     //TODO: delete video
 })
 
+const getReviews = asyncHandler(async (req, res) => {
+    const { limit = 200, startIndex = 0, bussinessId, eventId } = req.body
+
+    if (!bussinessId && !eventId) {
+        return res
+            .status(400)
+            .json(new ApiError(400, "bussiness Id or event Id is required"))
+    }
+
+    const review = await Review.aggregate([
+        {
+            $match: {
+                $or: [{ bussinessId: new mongoose.Types.ObjectId(bussinessId) }, { eventId: new mongoose.Types.ObjectId(eventId) }]
+            }
+        },
+        {
+            $lookup: {
+                from: "vendors",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner",
+                pipeline: [{
+                    $project: {
+                        fullName: 1,
+                        mobile: 1,
+                        profileImage: 1,
+                        usertype: 1,
+                        status: 1,
+                    }
+                }
+                ]
+            }
+        }, {
+            $project: {
+                rating: 1,
+                content: 1,
+                owner: 1,
+            }
+        },
+        { $sort: { _id: -1 } },
+        { $skip: parseInt(startIndex) },
+        { $limit: parseInt(limit) },
+    ])
+
+    // const master = await Review.find({ bussinessId, eventId })
+    //     .select("rating content")
+    //     .sort("-_id")
+    //     .skip(startIndex)
+    //     .limit(limit)
+    //     .exec();
+
+    if (!review) {
+        return res
+            .status(500)
+            .json(new ApiError(500, `Something went wrong while fetching review`, error))
+    }
+
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, review, `review List Fetched successfully`)
+        )
+})
+
+const addReview = asyncHandler(async (req, res) => {
+    const { rating, content, bussinessId, eventId } = req.body
+
+    if (!rating) {
+        return res
+            .status(400)
+            .json(new ApiError(400, "rating is required"))
+    }
+    if (!bussinessId && !eventId) {
+        return res
+            .status(400)
+            .json(new ApiError(400, "bussiness Id or event Id is required"))
+    }
+
+    // const existedReview = await Review.findOne({
+    //     owner: req.vendor._id,
+    //     $or: [{ bussinessId }, { eventId }]
+    // })
+
+    // if (existedReview) {
+    //     return res
+    //         .status(409)
+    //         .json(new ApiError(409, `${type} with same title already exists`))
+    //     // throw new ApiError(409, "User with email or mobile already exists")
+    // }
+
+    const review = await Review.create({
+        rating,
+        content,
+        bussinessId,
+        eventId,
+        owner: req.vendor._id
+    })
+
+    const createdReview = await Review.findById(review._id)
+
+    if (!createdReview) {
+        return res
+            .status(500)
+            .json(new ApiError(500, `Something went wrong while adding the Review`, error))
+
+    }
+
+    return res.status(201).json(
+        new ApiResponse(200, createdReview, `Review Added Successfully`)
+    )
+
+})
+
+
 
 export {
     getAllBussiness,
@@ -492,4 +588,6 @@ export {
     deleteBussinessHour,
     getAllBussinesses,
     getMyBussiness,
+    getReviews,
+    addReview
 }
