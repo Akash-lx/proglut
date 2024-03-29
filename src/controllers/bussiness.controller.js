@@ -12,7 +12,7 @@ import fs from "fs"
 const addBussinessInfo = asyncHandler(async (req, res) => {
     const { title, city, state, street, area, pincode, latitude, longitude, fullAddress, category } = req.body
 
-    if (!title && !category) {
+    if (!title || !category) {
         return res
             .status(400)
             .json(new ApiError(400, "category and title are required"))
@@ -73,7 +73,7 @@ const getBussinessById = asyncHandler(async (req, res) => {
 const updateBussinessInfo = asyncHandler(async (req, res) => {
     const { Id, title, city, state, street, area, pincode, latitude, longitude, fullAddress, category } = req.body
 
-    if (!title && !category) {
+    if (!title || !category) {
         return res
             .status(400)
             .json(new ApiError(400, "category and title are required"))

@@ -156,7 +156,7 @@ const getActivityById = asyncHandler(async (req, res) => {
 
 const updateStatusActivity = asyncHandler(async (req, res) => {
     const { Id, status } = req.query
-    if (!Id && !status) {
+    if (!Id || !status) {
         return res
             .status(400)
             .json(new ApiError(400, "Id And Status are required"))

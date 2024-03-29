@@ -21,16 +21,7 @@ router.route("/").get(getAllEvent)
     .post(verifyVendorJWT,addEventInfo)
     .patch(verifyVendorJWT,updateEventInfo);
 
-router.route("/logo").patch( bussinessUpload.fields([
-    {
-        name: "brandLogo",
-        maxCount: 1
-    }, 
-    {
-        name: "coverImage",
-        maxCount: 1
-    }
-]),updateEventlogo);
+router.route("/logo").patch(bussinessUpload.array('coverImages', 5),updateEventlogo);
 
 router
     .route("/detail")

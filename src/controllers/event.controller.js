@@ -129,20 +129,32 @@ const updateEventlogo = asyncHandler(async (req, res) => {
             .json(new ApiError(400, "Id is required"))
     }
 
-    const coverImageFile = req.files?.coverImages[0]?.filename;
+    const imagearr = [];
+   req.files.map((item,index) =>{
+        // console.log(item.filename);
+        imagearr.push(item.filename);
+    });
+    if(imagearr.length == 0){
+        return res
+        .status(400)
+        .json(new ApiError(400, "images are required"))
+    }
+    // console.log(imagearr);
 
     const eventImages = await Event.findById(Id).select("coverImages");
 
-    if (eventImages.coverImages && eventImages.coverImages != '') {
-        fs.unlinkSync(`public/eventImages/${eventImages.coverImages}`);
+    if (eventImages.coverImages && eventImages.coverImages.length > 0) {
+        eventImages.coverImages.map((item,index) => {
+            fs.unlinkSync(`public/bussinessImages/${item}`);
+        })
+      
     }
 
     const event = await Event.findByIdAndUpdate(
         Id,
         {
             $set: {
-                description,
-                coverImages: coverImageFile
+                coverImages: imagearr
             }
         },
         { new: true }

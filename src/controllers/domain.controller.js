@@ -186,7 +186,7 @@ const updateCategory = asyncHandler(async (req, res) => {
 const updateStatusCategory = asyncHandler(async (req, res) => {
     const { Id, status } = req.query
     const type = req.path.split("/")[1];
-    if (!Id && !status) {
+    if (!Id || !status) {
         return res
             .status(400)
             .json(new ApiError(400, "Id And Status are required"))

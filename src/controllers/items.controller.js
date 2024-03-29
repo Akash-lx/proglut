@@ -75,7 +75,7 @@ const addItem = asyncHandler(async (req, res) => {
     const type = req.path.split("/")[1];
     const imageLocalPath = req.file?.filename
 
-    if (!title && !rate) {
+    if (!title || !rate) {
         return res
             .status(400)
             .json(new ApiError(400, "Title and Rate are required"))
@@ -137,7 +137,7 @@ const updateItem = asyncHandler(async (req, res) => {
     const type = req.path.split("/")[1];
 
 
-    if (!title && !rate) {
+    if (!title || !rate) {
         return res
             .status(400)
             .json(new ApiError(400, "Title and Rate are required"))
@@ -151,7 +151,7 @@ const updateItem = asyncHandler(async (req, res) => {
 
     const itemImage = await Item.findById(Id).select("image");
 
-    if (itemImage.image && itemImage.image != '') {
+    if (itemImage.image || itemImage.image != '') {
         fs.unlinkSync(`public/itemImages/${itemImage.image}`);
     }
 
@@ -185,7 +185,7 @@ const updateItem = asyncHandler(async (req, res) => {
 const updateStatusItem = asyncHandler(async (req, res) => {
     const { Id, status } = req.query
     const type = req.path.split("/")[1];
-    if (!Id && !status) {
+    if (!Id || !status) {
         return res
             .status(400)
             .json(new ApiError(400, "Id And Status are required"))

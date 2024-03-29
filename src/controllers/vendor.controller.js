@@ -405,7 +405,7 @@ const updateVendorStatus = asyncHandler(async (req, res) => {
     const usertype = req.path.split("/")[1];
     const { Id, status } = req.body
 
-    if (!Id && !status) {
+    if (!Id || !status) {
         return res
             .status(400)
             .json(new ApiError(400, "VendorId And Status are required"))
