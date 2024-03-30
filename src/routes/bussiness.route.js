@@ -12,7 +12,6 @@ import {
     addBussinessHour,
     updateBussinessHour,
     deleteBussinessHour,
-    getAllBussinesses,
     getMyBussiness,
     getReviews,
     addReview,
@@ -46,7 +45,6 @@ router
 
 router.route("/active").get(getActiveBussiness);
 router.route("/my").get(verifyVendorJWT, getMyBussiness);
-router.route("/all").get(getAllBussinesses);
 
 router.route("/aminities/")
     // .get(verifyVendorJWT, getAllActivity)

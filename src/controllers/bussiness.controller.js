@@ -57,16 +57,100 @@ const addBussinessInfo = asyncHandler(async (req, res) => {
 const getBussinessById = asyncHandler(async (req, res) => {
 
     const { Id } = req.query
-    const createdBussiness = await Bussiness.findById(Id)
+    const bussiness = await Bussiness.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(Id)
+            }
+        },
+        {
+            $lookup: {
+                from: "reviews",
+                localField: "_id",
+                foreignField: "bussinessId",
+                as: "reviews"
+            }
+        }
+        , {
+            $lookup: {
+                from: "domains",
+                localField: "amenities",
+                foreignField: "_id",
+                as: "amenities_list",
+                pipeline: [{
+                    $project: {
+                        title: 1,
+                        image: 1,
+                        description: 1,
+                    }
+                }
+                ]
+            }
+        },
+        {
+            $lookup: {
+                from: "vendors",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner",
+                pipeline: [{
+                    $project: {
+                        fullName: 1,
+                        profileImage: 1,
+                        usertype: 1,
+                        status: 1,
+                    }
+                }
+                ]
+            }
+        },
+        {
+            $lookup: {
+                from: "domains",
+                localField: "domain",
+                foreignField: "_id",
+                as: "domain",
+                pipeline: [{
+                    $project: {
+                        title: 1,
 
-    if (!createdBussiness) {
-        return res
-            .status(500)
-            .json(new ApiError(500, `Something went wrong while fetching bussiness`, error))
-    }
+                    }
+                }
+                ]
+            },
+        },
+        {
+            $addFields: {
+                reviewcount: {
+                    $size: "$reviews"
+                },
+                rating: {
+                    $avg: "$reviews.rating"
+                },
+
+
+            }
+        },
+        {
+            $project: {
+                coverImage: 1,
+                brandLogo: 1,
+                title: 1,
+                rating: 1,
+                reviewcount: 1,
+                isPublished: 1,
+                domain: 1,
+                description: 1,
+                address: 1,
+                bussinessHour: 1,
+                amenities_list: 1,
+                owner: 1,
+            }
+        }
+    ])
 
     return res.status(201).json(
-        new ApiResponse(200, createdBussiness, `bussiness fetched Successfully`)
+        new ApiResponse(200, bussiness, `bussiness fetched Successfully`)
     )
 })
 
@@ -218,13 +302,50 @@ const getAllBussiness = asyncHandler(async (req, res) => {
 
 const getActiveBussiness = asyncHandler(async (req, res) => {
 
-    const { limit = 200, startIndex = 0 } = req.body
+    const { limit = 200, startIndex = 0, domain, vendorId } = req.body
 
-    const bussiness = await Bussiness.find()
-        .sort("-_id")
-        .skip(startIndex)
-        .limit(limit)
-        .exec();
+   const query={}
+  if(domain && domain != undefined ){ query["domain"] = domain };
+  if(vendorId && vendorId != undefined){ query["vendorId"] = vendorId};
+  
+// console.log(query);
+    const bussiness = await Bussiness.aggregate([
+        {
+            $match: query
+        },
+        {
+            $lookup: {
+                from: "reviews",
+                localField: "_id",
+                foreignField: "bussinessId",
+                as: "reviews"
+            }
+        },
+        {
+            $addFields: {
+                reviewcount: {
+                    $size: "$reviews"
+                },
+                rating: {
+                    $avg: "$reviews.rating"
+                },
+
+            }
+        },
+        {
+            $project: {
+                coverImage: 1,
+                brandLogo: 1,
+                title: 1,
+                address: 1,
+                isPublished: 1,
+                rating: 1,
+                reviewcount: 1,
+            }
+        }, { $sort: { _id: -1 } },
+        { $skip: parseInt(startIndex) },
+        { $limit: parseInt(limit) },
+    ])
 
     return res
         .status(200)
@@ -280,70 +401,6 @@ const getMyBussiness = asyncHandler(async (req, res) => {
             new ApiResponse(200, bussiness, `bussiness List Fetched successfully`)
         )
 })
-
-const getAllBussinesses = asyncHandler(async (req, res) => {
-    // const {mobile} = req.params
-
-    const bussiness = await Bussiness.aggregate([
-
-        {
-            $lookup: {
-                from: "domains",
-                localField: "amenities",
-                foreignField: "_id",
-                as: "amenities_list",
-                pipeline: [{
-                    $project: {
-                        title: 1,
-                        image: 1,
-                        description: 1,
-                    }
-                }
-                ]
-            }
-        },
-        {
-            $lookup: {
-                from: "domains",
-                localField: "domain",
-                foreignField: "_id",
-                as: "domain",
-                pipeline: [{
-                    $project: {
-                        title: 1,
-                    }
-                }
-                ]
-            },
-
-
-        },
-        {
-            $project: {
-                coverImage: 1,
-                brandLogo: 1,
-                title: 1,
-                description: 1,
-                address: 1,
-                amenities: 1,
-                isPublished: 1,
-                domain_name: 1,
-
-            }
-        }
-    ])
-
-    // if (!channel?.length) {
-    //     throw new ApiError(404, "channel does not exists")
-    // }
-
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(200, bussiness, "bussiness fetched successfully")
-        )
-})
-
 
 
 const addAminities = asyncHandler(async (req, res) => {
@@ -586,7 +643,6 @@ export {
     addBussinessHour,
     updateBussinessHour,
     deleteBussinessHour,
-    getAllBussinesses,
     getMyBussiness,
     getReviews,
     addReview

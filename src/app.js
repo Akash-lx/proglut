@@ -29,9 +29,9 @@ import masterRoute from './routes/master.route.js'
 
 //routes declaration
 
-app.get('/',(req,res) =>{
-    res.send('Welcome to Progult');
-})
+// app.get('/',(req,res) =>{
+//     res.send('Welcome to Progult');
+// })
 
 app.use("/api/v1", vendorRouter)
 app.use("/api/v1/domain", domainRouter)
