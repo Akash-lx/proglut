@@ -305,8 +305,8 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
     const { limit = 200, startIndex = 0, domain, vendorId } = req.body
 
    const query={}
-  if(domain && domain != undefined ){ query["domain"] = domain };
-  if(vendorId && vendorId != undefined){ query["vendorId"] = vendorId};
+  if(domain && domain != undefined ){ query["domain"] = new mongoose.Types.ObjectId(domain) };
+  if(vendorId && vendorId != undefined){ query["vendorId"] = new mongoose.Types.ObjectId(vendorId)};
   
 // console.log(query);
     const bussiness = await Bussiness.aggregate([
