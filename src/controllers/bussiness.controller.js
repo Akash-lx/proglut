@@ -269,7 +269,7 @@ const updateStatusBussiness = asyncHandler(async (req, res) => {
 
 
 const getAllBussiness = asyncHandler(async (req, res) => {
-    const { limit = 20, pageNumber = 0 } = req.body
+    const { limit = 20, pageNumber = 0 } = req.query
     const result = {};
     const totalPosts = await Bussiness.countDocuments().exec();
     let startIndex = pageNumber * limit;
@@ -302,11 +302,11 @@ const getAllBussiness = asyncHandler(async (req, res) => {
 
 const getActiveBussiness = asyncHandler(async (req, res) => {
 
-    const { limit = 200, startIndex = 0, domain, vendorId } = req.body
+    const { limit = 200, startIndex = 0, domain, vendorId } = req.query
 
    const query={}
   if(domain && domain != undefined ){ query["domain"] = new mongoose.Types.ObjectId(domain) };
-  if(vendorId && vendorId != undefined){ query["vendorId"] = new mongoose.Types.ObjectId(vendorId)};
+  if(vendorId && vendorId != undefined){ query["owner"] = new mongoose.Types.ObjectId(vendorId)};
   
 // console.log(query);
     const bussiness = await Bussiness.aggregate([
@@ -515,7 +515,7 @@ const deleteBussiness = asyncHandler(async (req, res) => {
 })
 
 const getReviews = asyncHandler(async (req, res) => {
-    const { limit = 200, startIndex = 0, bussinessId, eventId } = req.body
+    const { limit = 200, startIndex = 0, bussinessId, eventId } = req.query
 
     if (!bussinessId && !eventId) {
         return res
