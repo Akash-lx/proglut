@@ -55,7 +55,7 @@ const getActiveActivity = asyncHandler(async (req, res) => {
             .status(400)
             .json(new ApiError(400, "BussinessId is required"))
     }
-    const category = await Activities.find({ bussinessId: bussinessId, status: 'active' })
+    const category = await Activities.find({ bussinessId: bussinessId, status: 'active' }).populate({path:"activityId",select:"image title"})
         .select("-type")
         .sort("-_id")
         .skip(startIndex)
