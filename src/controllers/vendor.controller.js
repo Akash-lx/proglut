@@ -213,7 +213,7 @@ const verifyOTP = asyncHandler(async (req, res) => {
 
     const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(vendor._id)
 
-    const loggedInVendor = await Vendor.findById(vendor._id).select("-otp")
+    // const loggedInVendor = await Vendor.findById(vendor._id).select("-otp")
 
     const options = {
         httpOnly: true,
@@ -231,7 +231,7 @@ const verifyOTP = asyncHandler(async (req, res) => {
                 200,
                 vendor, 
                 `${usertype} logged In Successfully`,
-               {"accessToken":accessToken}
+               {"accessToken":accessToken,"refreshToken":refreshToken}
             )
         )
 

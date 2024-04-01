@@ -30,7 +30,7 @@ router.route("/vendor/verifyOTP").post(verifyOTP)
 
 //secured routes
 router.route("/vendor/logout").post(verifyVendorJWT,  logoutVendor)
-router.route("/vendor/refresh-token").get(refreshAccessToken)
+router.route("/vendor/refresh-token").post(refreshAccessToken)
 router.route("/vendor/current-vendor").get(verifyVendorJWT, getCurrentVendor)
 router.route("/vendor/update-account").patch(verifyVendorJWT, updateVendorProfile)
 router.route("/vendor/update-image").patch(verifyVendorJWT, vendorUpload.single("profileImage"), updateVendorImage)
@@ -46,7 +46,7 @@ router.route("/user/verifyOTP").post(verifyOTP)
 
 //secured routes
 router.route("/user/logout").post(verifyVendorJWT,  logoutVendor)
-router.route("/user/refresh-token").get(refreshAccessToken)
+router.route("/user/refresh-token").post(refreshAccessToken)
 router.route("/user/current-user").get(verifyVendorJWT, getCurrentVendor)
 router.route("/user/update-account").patch(verifyVendorJWT, updateVendorProfile)
 router.route("/user/update-image").patch(verifyVendorJWT, userUpload.single("profileImage"), updateVendorImage)
