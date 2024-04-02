@@ -9,6 +9,7 @@ import {
     getActiveBussiness,
     updateBussinesslogo,
     addAminities,
+    getBussinessHour,
     addBussinessHour,
     updateBussinessHour,
     deleteBussinessHour,
@@ -53,7 +54,7 @@ router.route("/aminities/")
 // .patch(itemUpload.single("image"), updateActivity);
 
 router.route("/slots/")
-    // .get(verifyVendorJWT, getAllActivity)
+    .get(verifyVendorJWT, getBussinessHour)
     .post(verifyVendorJWT, addBussinessHour)
     .delete(verifyVendorJWT, deleteBussinessHour)
     .patch(verifyVendorJWT, updateBussinessHour);

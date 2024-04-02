@@ -426,6 +426,44 @@ const addAminities = asyncHandler(async (req, res) => {
 
 })
 
+const getBussinessHour = asyncHandler(async (req, res) => {
+    const { day, bussinessId } = req.query
+
+    if (!bussinessId) {
+        return res
+            .status(400)
+            .json(new ApiError(400, "Bussiness Id is required"))
+    }
+
+    const query={}
+    query['_id'] = new mongoose.Types.ObjectId(bussinessId)
+    if(day && day != undefined ){ query["bussinessHour.days"] = day };
+
+    const bussiness = await Bussiness.aggregate([
+        {
+            $unwind: "$bussinessHour"
+        },
+        {
+            $match: query
+        },
+        {
+            $group: {
+              _id: "$bussinessHour",
+            }
+          }
+    ])
+
+    const slotdata = []
+    bussiness.forEach((element) => {
+        slotdata.push(element._id);
+    })
+
+    return res.status(201).json(
+        new ApiResponse(200, slotdata, `Bussiness Hour List Fetch Successfully`)
+    )
+
+})
+
 const addBussinessHour = asyncHandler(async (req, res) => {
     const { title, days, startTime, endTime, bussinessId } = req.body
 
@@ -640,6 +678,7 @@ export {
     deleteBussiness,
     updateBussinesslogo,
     addAminities,
+    getBussinessHour,
     addBussinessHour,
     updateBussinessHour,
     deleteBussinessHour,

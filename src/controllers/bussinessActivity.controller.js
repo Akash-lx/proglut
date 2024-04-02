@@ -1,6 +1,6 @@
-// import mongoose, {isValidObjectId} from "mongoose"
+import mongoose, {isValidObjectId} from "mongoose"
 import { Activities } from "../models/activities.model.js"
-import { Bussiness } from "../models/bussiness.model.js"
+// import { Bussiness } from "../models/bussiness.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
@@ -198,21 +198,61 @@ const deleteActivity = asyncHandler(async (req, res) => {
         )
 })
 
+
 const getActivitySlots = asyncHandler(async (req, res) => {
+    const { day, bussActivityId } = req.query
 
-    const { bussActivityId } = req.query
-    const activitySlots = await Activities.findById(bussActivityId).select(' slots')
-
-    if (!activitySlots) {
+    if (!bussActivityId) {
         return res
-            .status(500)
-            .json(new ApiError(500, `Something went wrong while fetching slots`, error))
+            .status(400)
+            .json(new ApiError(400, "Bussiness Activity Id is required"))
     }
 
+    const query={}
+    query['_id'] = new mongoose.Types.ObjectId(bussActivityId)
+    if(day && day != undefined ){ query["slots.days"] = day };
+
+    const slotlist = await Activities.aggregate([
+        {
+            $unwind: "$slots"
+        },
+        {
+            $match: query
+        },
+        {
+            $group: {
+                _id: "$slots",
+            }
+          }
+    ])
+
+    const slotdata = []
+    slotlist.forEach((element) => {
+        slotdata.push(element._id);
+    })
+
+
     return res.status(201).json(
-        new ApiResponse(200, activitySlots, `Activity slots fetched Successfully`)
+        new ApiResponse(200, slotdata, `Slots List Fetch Successfully`)
     )
+
 })
+
+// const getActivitySlots = asyncHandler(async (req, res) => {
+
+//     const { bussActivityId } = req.query
+//     const activitySlots = await Activities.findById(bussActivityId).select(' slots')
+
+//     if (!activitySlots) {
+//         return res
+//             .status(500)
+//             .json(new ApiError(500, `Something went wrong while fetching slots`, error))
+//     }
+
+//     return res.status(201).json(
+//         new ApiResponse(200, activitySlots, `Activity slots fetched Successfully`)
+//     )
+// })
 
 const addSlot = asyncHandler(async (req, res) => {
     const { title, days, startTime, endTime, maxseat, duration, rate, bussActivityId } = req.body
