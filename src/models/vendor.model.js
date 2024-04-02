@@ -87,6 +87,10 @@ const vendorSchema = new Schema(
             type: Number,
             
         },
+        password: {
+            type: String,
+            
+        },
 
         usertype: {
             type: String,

@@ -8,6 +8,20 @@ import fs from "fs"
 import mongoose from "mongoose";
 
 
+const generateWebAccessToken = async (vendorId) => {
+    try {
+        const vendor = await Vendor.findById(vendorId)
+        const accessToken = vendor.generateAccessToken()
+        const refreshToken = vendor.generateRefreshToken()
+        return { accessToken, refreshToken }
+    } catch (error) {
+        return res
+            .status(500)
+            .json(new ApiError(500, "Something went wrong while web generating referesh and access token", error))
+        // throw new ApiError(500, "Something went wrong while generating referesh and access token")
+    }
+}
+
 const generateAccessAndRefereshTokens = async (vendorId) => {
     try {
         const vendor = await Vendor.findById(vendorId)
@@ -237,6 +251,7 @@ const verifyOTP = asyncHandler(async (req, res) => {
 
 })
 
+
 const logoutVendor = asyncHandler(async (req, res) => {
     const usertype = req.path.split("/")[1];
     await Vendor.findByIdAndUpdate(
@@ -334,7 +349,7 @@ const getCurrentVendor = asyncHandler(async (req, res) => {
 })
 
 const updateVendorProfile = asyncHandler(async (req, res) => {
-    const { fullName, gender, city, state, street, area, pincode, latitude, longitude } = req.body
+    const { fullName, gender, city, state, street, area, pincode, latitude, longitude ,mobile,email,password} = req.body
     const usertype = req.path.split("/")[1];
     if (!fullName || !gender) {
         return res
@@ -357,7 +372,10 @@ const updateVendorProfile = asyncHandler(async (req, res) => {
                     pincode,
                     latitude,
                     longitude
-                }
+                },
+                mobile,
+                email,
+                password
             }
         },
         { new: true }
@@ -481,131 +499,76 @@ const getPaginateVendors = asyncHandler(async (req, res) => {
  
 })
 
-// const getVendorChannelProfile = asyncHandler(async(req, res) => {
-//     const {mobile} = req.params
+const adminLogin = asyncHandler(async (req, res) => {
+    // req body -> data
+    // mobile or email
+    //find the vendor
+    const usertype = req.path.split("/")[1];
+    const { email, mobile, password } = req.body
 
-//     if (!mobile?.trim()) {
-//         throw new ApiError(400, "mobile is missing")
-//     }
+    if (!mobile && !email) {
+        return res
+            .status(400)
+            .json(new ApiError(400, "mobile or email is required"))
+    }
+    if (!password) {
+        return res
+            .status(400)
+            .json(new ApiError(400, "Password is required"))
+    }
 
-//     const channel = await Vendor.aggregate([
-//         {
-//             $match: {
-//                 mobile: mobile?.toLowerCase()
-//             }
-//         },
-//         {
-//             $lookup: {
-//                 from: "subscriptions",
-//                 localField: "_id",
-//                 foreignField: "channel",
-//                 as: "subscribers"
-//             }
-//         },
-//         {
-//             $lookup: {
-//                 from: "subscriptions",
-//                 localField: "_id",
-//                 foreignField: "subscriber",
-//                 as: "subscribedTo"
-//             }
-//         },
-//         {
-//             $addFields: {
-//                 subscribersCount: {
-//                     $size: "$subscribers"
-//                 },
-//                 channelsSubscribedToCount: {
-//                     $size: "$subscribedTo"
-//                 },
-//                 isSubscribed: {
-//                     $cond: {
-//                         if: {$in: [req.vendor?._id, "$subscribers.subscriber"]},
-//                         then: true,
-//                         else: false
-//                     }
-//                 }
-//             }
-//         },
-//         {
-//             $project: {
-//                 fullName: 1,
-//                 mobile: 1,
-//                 subscribersCount: 1,
-//                 channelsSubscribedToCount: 1,
-//                 isSubscribed: 1,
-//                 avatar: 1,
-//                 coverImage: 1,
-//                 email: 1
+    const vendor = await Vendor.findOne({
+        usertype:usertype,
+        $or: [{ mobile }, { email }]
+    })
 
-//             }
-//         }
-//     ])
+    if (!vendor) {
+        return res
+            .status(404)
+            .json(new ApiError(404, `${usertype} does not exist`))
+    } else if (vendor.status != 'active') {
+        return res
+            .status(403)
+            .json(new ApiError(403, `${usertype} is ${vendor.status} ! please contact admin`))
+    }
 
-//     if (!channel?.length) {
-//         throw new ApiError(404, "channel does not exists")
-//     }
 
-//     return res
-//     .status(200)
-//     .json(
-//         new ApiResponse(200, channel[0], "Vendor channel fetched successfully")
-//     )
-// })
+    const isPasswordValid = vendor.password == password ? true : false;
 
-// const getWatchHistory = asyncHandler(async(req, res) => {
-//     const vendor = await Vendor.aggregate([
-//         {
-//             $match: {
-//                 _id: new mongoose.Types.ObjectId(req.vendor._id)
-//             }
-//         },
-//         {
-//             $lookup: {
-//                 from: "videos",
-//                 localField: "watchHistory",
-//                 foreignField: "_id",
-//                 as: "watchHistory",
-//                 pipeline: [
-//                     {
-//                         $lookup: {
-//                             from: "vendors",
-//                             localField: "owner",
-//                             foreignField: "_id",
-//                             as: "owner",
-//                             pipeline: [
-//                                 {
-//                                     $project: {
-//                                         fullName: 1,
-//                                         mobile: 1,
-//                                         avatar: 1
-//                                     }
-//                                 }
-//                             ]
-//                         }
-//                     },
-//                     {
-//                         $addFields:{
-//                             owner:{
-//                                 $first: "$owner"
-//                             }
-//                         }
-//                     }
-//                 ]
-//             }
-//         }
-//     ])
+    //   console.log(vendor.otp)
 
-//     return res
-//     .status(200)
-//     .json(
-//         new ApiResponse(
-//             200,
-//             vendor[0].watchHistory,
-//             "Watch history fetched successfully"
-//         )
-//     )
-// })
+    if (!isPasswordValid) {
+        return res
+            .status(401)
+            .json(new ApiError(401, "Password Not Matched"))
+    }
+
+    const { accessToken, refreshToken } = await generateWebAccessToken(vendor._id)
+
+    // const loggedInVendor = await Vendor.findById(vendor._id).select("-otp")
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+    // Object.assign(loggedInVendor, {accessToken: accessToken});
+    // vendor['accessToken'] = accessToken;
+// console.log(loggedInVendor);
+    return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(
+            new ApiResponse(
+                200,
+                vendor, 
+                `${usertype} logged In Successfully`,
+               {"accessToken":accessToken,"refreshToken":refreshToken}
+            )
+        )
+
+})
+
 
 export {
     registerVendor,
@@ -620,6 +583,7 @@ export {
     updateVendorStatus,
     getVendorsList,
     getPaginateVendors,
+    adminLogin,
     // getVendorChannelProfile,
     // getWatchHistory
 }

@@ -1,5 +1,6 @@
 // import mongoose, {isValidObjectId} from "mongoose"
 import { Master } from "../models/master.model.js"
+import { ApplicationSetting } from "../models/application.model.js"
 // import {User} from "../models/user.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
@@ -194,6 +195,45 @@ const deleteMaster = asyncHandler(async (req, res) => {
 })
 
 
+const updateApplicationSetting = asyncHandler(async (req, res) => {
+    const {Id, name, title, email, mobile, city, state, street, area, pincode, latitude, longitude } = req.body
+    // const usertype = req.path.split("/")[1];
+    // if (!fullName || !gender) {
+    //     return res
+    //         .status(400)
+    //         .json(new ApiError(400, "FullName And Gender are required"))
+    //     // throw new ApiError(400, "")
+    // }
+
+    const application = await ApplicationSetting.findByIdAndUpdate(
+       Id,
+        {
+            $set: {
+                name,
+                title,
+                address: {
+                    city,
+                    state,
+                    street,
+                    area,
+                    pincode,
+                    latitude,
+                    longitude
+                },
+                mobile,
+                email,
+            }
+        },
+        { new: true }
+
+    )
+    
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, application, `Application details updated successfully`))
+});
+
 export {
     getAllMaster,
     getActiveMaster,
@@ -202,5 +242,5 @@ export {
     updateMaster,
     updateStatusMaster,
     deleteMaster,
-
+    updateApplicationSetting,
 }

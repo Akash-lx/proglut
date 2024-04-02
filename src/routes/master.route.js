@@ -6,24 +6,26 @@ getMasterById,
 updateMaster,
 updateStatusMaster,
 deleteMaster,
-getActiveMaster
+getActiveMaster,
+updateApplicationSetting
 } from "../controllers/master.controller.js"
-// import {verifyVendorJWT} from "../middlewares/auth.middleware.js"
+import {verifyVendorJWT} from "../middlewares/auth.middleware.js"
 
 const router = Router();
 // router.use(verifyJWT); // Apply verifyJWT middleware to all routes in this file
 
 router.route("/unit/").get(getAllMaster)
-    .post(addMaster)
-    .patch(updateMaster);
+    .post(verifyVendorJWT,addMaster)
+    .patch(verifyVendorJWT,updateMaster);
 
 router
     .route("/unit/detail")
     .get(getMasterById)
-    .patch(updateStatusMaster);
+    .patch(verifyVendorJWT,updateStatusMaster);
     // .delete(deleteMaster)
 
 router.route("/unit/active").get(getActiveMaster);
+router.route("/application-setting").patch(verifyVendorJWT,updateApplicationSetting);
 
 
 export default router
