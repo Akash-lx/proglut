@@ -56,6 +56,15 @@ const bussinessStorage = multer.diskStorage({
   },
 });
 
+const adminStorage = multer.diskStorage({
+  destination: "./public/adminImages",
+  filename: function (req, file, cb) {
+    const d = new Date();
+    let time = d.getTime();
+    cb(null, `${time}${file.originalname}`);
+  },
+});
+
 
 
 const vendorUpload = multer({ storage: vendorStorage });
@@ -64,4 +73,5 @@ const domainUpload = multer({ storage: domainStorage });
 const itemUpload = multer({ storage: itemStorage });
 const galleryUpload = multer({ storage: galleryStorage });
 const bussinessUpload = multer({ storage: bussinessStorage });
-export { vendorUpload,userUpload,domainUpload,itemUpload,galleryUpload,bussinessUpload}
+const adminUpload = multer({ storage: adminStorage });
+export { vendorUpload,userUpload,domainUpload,itemUpload,galleryUpload,bussinessUpload,adminUpload}

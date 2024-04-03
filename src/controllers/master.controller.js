@@ -5,7 +5,7 @@ import { ApplicationSetting } from "../models/application.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
-// import fs from "fs"
+import fs from "fs"
 
 const getAllMaster = asyncHandler(async (req, res) => {
     const { limit = 20, pageNumber = 0 } = req.body
@@ -195,8 +195,23 @@ const deleteMaster = asyncHandler(async (req, res) => {
 })
 
 
+const getApplicationSetting = asyncHandler(async (req, res) => {
+    
+    const applicationData = await ApplicationSetting.findOne()
+
+    if (!applicationData) {
+        return res
+            .status(500)
+            .json(new ApiError(500, `Something went wrong while fetching Application Setting`, error))
+    }
+
+    return res.status(201).json(
+        new ApiResponse(200, applicationData, `Application Setting fetched Successfully`)
+    )
+})
+
 const updateApplicationSetting = asyncHandler(async (req, res) => {
-    const {Id, name, title, email, mobile, city, state, street, area, pincode, latitude, longitude } = req.body
+    const { Id, name, title, email, mobile, city, state, street, area, pincode, latitude, longitude, keywords, description, socialLinks, termsConditions, privacyPolicy, helpSupport } = req.body
     // const usertype = req.path.split("/")[1];
     // if (!fullName || !gender) {
     //     return res
@@ -206,7 +221,7 @@ const updateApplicationSetting = asyncHandler(async (req, res) => {
     // }
 
     const application = await ApplicationSetting.findByIdAndUpdate(
-       Id,
+        Id,
         {
             $set: {
                 name,
@@ -222,17 +237,87 @@ const updateApplicationSetting = asyncHandler(async (req, res) => {
                 },
                 mobile,
                 email,
+                keywords,
+                description,
+                socialLinks,
+                termsConditions,
+                privacyPolicy,
+                helpSupport,
             }
         },
         { new: true }
 
     )
-    
+
+    if(!application){
+        return res
+        .status(500)
+        .json(
+            new ApiError(500,`Something went wrong while updating details in application setting`,error)
+        )
+    }
+
 
     return res
         .status(200)
         .json(new ApiResponse(200, application, `Application details updated successfully`))
 });
+
+const uploadfileSetting = asyncHandler(async (req, res) => {
+    const { Id,} = req.body
+
+    if (!Id) {
+        return res
+            .status(400)
+            .json(new ApiError(400, "Id is required"))
+    }
+
+    const iconFile = req.files?.icon ? req.files?.icon[0]?.filename :"";
+    const logoFile = req.files?.logo ? req.files?.logo[0]?.filename :"";
+    const bannerFile =  req.files?.banner ? req.files?.banner[0]?.filename :"";
+
+    const settingImages = await ApplicationSetting.findById(Id).select("icon logo banner");
+    const setquey={}
+
+    if (iconFile != '' && settingImages.icon && settingImages.icon != '') {
+        fs.unlinkSync(`public/adminImages/${settingImages.icon}`);
+    }
+    if (logoFile != '' && settingImages.logo && settingImages.logo != '') {
+        fs.unlinkSync(`public/adminImages/${settingImages.logo}`);
+    }
+    if (bannerFile != '' && settingImages.banner && settingImages.banner != '') {
+        fs.unlinkSync(`public/adminImages/${settingImages.banner}`);
+    }
+
+
+    if(iconFile && iconFile != '' && iconFile != undefined ){ setquey["icon"] = iconFile };
+    if(logoFile && logoFile != '' && logoFile != undefined ){ setquey["logo"] = logoFile };
+    if(bannerFile && bannerFile != '' && bannerFile != undefined ){ setquey["banner"] = bannerFile };
+  
+
+    const bussiness = await ApplicationSetting.findByIdAndUpdate(
+        Id,
+        {
+            $set: setquey
+        },
+        { new: true }
+    ).select()
+
+    if(!bussiness){
+        return res
+        .status(500)
+        .json(
+            new ApiError(500,`Something went wrong while updating files in application setting`,error)
+        )
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, bussiness, `Setting logo updated successfully`)
+        )
+
+})
 
 export {
     getAllMaster,
@@ -243,4 +328,6 @@ export {
     updateStatusMaster,
     deleteMaster,
     updateApplicationSetting,
+    uploadfileSetting,
+    getApplicationSetting,
 }
