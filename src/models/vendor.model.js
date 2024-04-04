@@ -132,7 +132,8 @@ vendorSchema.methods.generateAccessToken = function () {
             _id: this._id,
             email: this.email,
             mobile: this.mobile,
-            fullName: this.fullName
+            fullName: this.fullName,
+            usertype: this.usertype,
         },
         process.env.ACCESS_TOKEN_SECRET,
         {

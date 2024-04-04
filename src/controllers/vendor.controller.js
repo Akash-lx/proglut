@@ -205,6 +205,8 @@ const verifyOTP = asyncHandler(async (req, res) => {
 
         const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(vendor._id)
 
+        const loggedInUser = await Vendor.findById(vendor._id)
+
         const options = {
             httpOnly: true,
             secure: true
@@ -215,7 +217,7 @@ const verifyOTP = asyncHandler(async (req, res) => {
             .cookie("accessToken", accessToken, options)
             .cookie("refreshToken", refreshToken, options)
             .json(
-                new ApiResponse(200, vendor, `${usertype} logged In Successfully`, { "accessToken": accessToken, "refreshToken": refreshToken })
+                new ApiResponse(200, loggedInUser, `${usertype} logged In Successfully`, { "accessToken": accessToken, "refreshToken": refreshToken })
             )
 
     } catch (error) {

@@ -7,206 +7,219 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 import fs from "fs"
 
 const getAllCategory = asyncHandler(async (req, res) => {
-    const { limit = 20, pageNumber = 0 } = req.query
-    const type = req.path.split("/")[1];
-    const result = {};
-    const totalPosts = await Domain.countDocuments({type:type}).exec();
-    let startIndex = pageNumber * limit;
-    const endIndex = (pageNumber + 1) * limit;
-    result.totalPosts = totalPosts;
-    if (startIndex > 0) {
-        result.previous = {
-            pageNumber: pageNumber - 1,
-            limit: limit,
-        };
+    try {
+        const { limit = 200, startIndex = 0 } = req.query
+        const type = req.path.split("/")[1];
+        const category = await Domain.find({ type: type, status: { $ne: 'delete' } })
+            .select("-type")
+            .sort("-_id")
+            .skip(startIndex)
+            .limit(limit)
+            .exec();
+
+        if (!category) {
+            throw new ApiError(500, `Something went wrong while fetching ${type} list`)
+        }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, category, `${type} List Fetched successfully`)
+            )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Domain`))
     }
-    if (endIndex < (totalPosts)) {
-        result.next = {
-            pageNumber: pageNumber + 1,
-            limit: limit,
-        };
-    }
-    result.data = await Domain.find({ type: type })
-        .sort("-_id")
-        .skip(startIndex)
-        .limit(limit)
-        .exec();
-    result.rowsPerPage = limit;
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(200, result, `${type} List Fetched successfully`)
-        )
 })
 
 const getActiveCategory = asyncHandler(async (req, res) => {
+    try {
+        const { limit = 200, startIndex = 0 } = req.query
+        const type = req.path.split("/")[1];
+        const category = await Domain.find({ type: type, status: 'active' })
+            .select("-type")
+            .sort("-_id")
+            .skip(startIndex)
+            .limit(limit)
+            .exec();
 
-    const { limit = 200, startIndex = 0 } = req.query
-    const type = req.path.split("/")[1];
-    const category = await Domain.find({ type: type, status: 'active' })
-        .select("-type")
-        .sort("-_id")
-        .skip(startIndex)
-        .limit(limit)
-        .exec();
+        if (!category) {
+            throw new ApiError(500, `Something went wrong while fetching ${type} list`)
+        }
 
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(200, category, `${type} List Fetched successfully`)
-        )
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, category, `${type} List Fetched successfully`)
+            )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Domain`))
+    }
 })
 
 const addCategory = asyncHandler(async (req, res) => {
-    const { title, description } = req.body
-    const type = req.path.split("/")[1];
-    const imageLocalPath = req.file?.filename
-    // console.log(req.body)
-    // console.log(req)
-    if (!title) {
+    try {
+        const { title, description } = req.body
+        const type = req.path.split("/")[1];
+        const imageLocalPath = req.file?.filename
+        // console.log(req.body)
+        // console.log(req)
+        if (!title) {
+            throw new ApiError(400, `title is required`)
+        }
+        if (!imageLocalPath) {
+            return res
+                .status(400)
+                .json(new ApiError(400, "image is missing"))
+        }
+
+        const existedDomain = await Domain.findOne({
+            type: type,
+            title: title
+        })
+
+        if (existedDomain) {
+            throw new ApiError(409, `${type} with same title already exists`)
+        }
+
+        const domain = await Domain.create({
+            title,
+            description,
+            image: imageLocalPath,
+            type: type
+        })
+
+        const createdDomain = await Domain.findById(domain._id)
+
+        if (!createdDomain) {
+            throw new ApiError(500, `Something went wrong while Add ${type}`)
+        }
+
+        return res.status(201).json(
+            new ApiResponse(200, createdDomain, `${type} Added Successfully`)
+        )
+
+    } catch (error) {
         return res
-            .status(400)
-            .json(new ApiError(400, "title is required"))
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Domain`))
     }
-    if (!imageLocalPath) {
-        return res
-            .status(400)
-            .json(new ApiError(400, "image is missing"))
-    }
-
-    const existedDomain = await Domain.findOne({
-        type: type,
-        title: title
-    })
-
-    if (existedDomain) {
-        return res
-            .status(409)
-            .json(new ApiError(409, `${type} with same title already exists`))
-        // throw new ApiError(409, "User with email or mobile already exists")
-    }
-
-    const domain = await Domain.create({
-        title,
-        description,
-        image: imageLocalPath,
-        type: type
-    })
-
-    const createdDomain = await Domain.findById(domain._id)
-
-    if (!createdDomain) {
-        return res
-            .status(500)
-            .json(new ApiError(500, `Something went wrong while adding the ${type}`, error))
-
-    }
-
-    return res.status(201).json(
-        new ApiResponse(200, createdDomain, `${type} Added Successfully`)
-    )
-
 })
 
 const getCategoryById = asyncHandler(async (req, res) => {
 
-    const { Id } = req.query
-    const type = req.path.split("/")[1];
-    const createdDomain = await Domain.findById(Id)
+    try {
+        const { Id } = req.query
+        const type = req.path.split("/")[1];
+        const createdDomain = await Domain.findById(Id)
 
-    if (!createdDomain) {
+        if (!createdDomain) {
+            throw new ApiError(500, `Something went wrong while fetching ${type}`)
+        }
+
+        return res.status(201).json(
+            new ApiResponse(200, createdDomain, `${type} fetched Successfully`)
+        )
+    } catch (error) {
         return res
-            .status(500)
-            .json(new ApiError(500, `Something went wrong while fetching ${type}`, error))
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Domain`))
     }
-
-    return res.status(201).json(
-        new ApiResponse(200, createdDomain, `${type} fetched Successfully`)
-    )
 })
 
 const updateCategory = asyncHandler(async (req, res) => {
-    const { domainId, title, description } = req.body
-    const imageLocalPath = req.file?.filename
-    const type = req.path.split("/")[1];
-    if (!imageLocalPath) {
-        return res
-            .status(400)
-            .json(new ApiError(400, "image is missing"))
-    }
+   try {
+     const { domainId, title, description } = req.body
+     const image = req.file?.filename
+     const type = req.path.split("/")[1];
+    
+     if (!title) {
+        image !='' && image != undefined ? fs.unlinkSync(`public/domainImages/${image}`) : null;
+         throw new ApiError(400, `title is required`)
+     }
+ 
+ 
+     const existedDomain = await Domain.findOne({
+         _id: { $ne: domainId },
+         type: type,
+         title: title
+     })
+ 
+     if (existedDomain) {
+        image !='' && image != undefined ? fs.unlinkSync(`public/domainImages/${image}`) : null;
+         throw new ApiError(409,`${type} with same title already exists`)
+     }
+ 
+     const domainImage = await Domain.findById(domainId).select("image");
+ 
+     if (image !='' && image != undefined && domainImage.image && domainImage.image != '') {
+         fs.unlinkSync(`public/domainImages/${domainImage.image}`);
+     }
+     const domain = await Domain.findByIdAndUpdate(
+         domainId,
+         {
+             $set: {
+                 title,
+                 description,
+                 image,
+                 type
+             }
+         },
+         { new: true }
+     ).select("-type")
+ 
+     if (!domain) {
+        throw new ApiError(500, `Something went wrong while update ${type}`)
+      }
 
-    if (!title) {
-        fs.unlinkSync(`public/domainImages/${imageLocalPath}`);
-        return res
-            .status(400)
-            .json(new ApiError(400, "title is required"))
-    }
-
-
-    const existedDomain = await Domain.findOne({
-        _id: { $ne: domainId },
-        type: type,
-        title: title
-    })
-
-    if (existedDomain) {
-        fs.unlinkSync(`public/domainImages/${imageLocalPath}`);
-        return res
-            .status(409)
-            .json(new ApiError(409, `${type} with same title already exists`))
-        // throw new ApiError(409, "User with email or mobile already exists")
-    }
-
-    const domainImage = await Domain.findById(domainId).select("image");
-
-    if (domainImage.image && domainImage.image != '') {
-        fs.unlinkSync(`public/domainImages/${domainImage.image}`);
-    }
-    const domain = await Domain.findByIdAndUpdate(
-        domainId,
-        {
-            $set: {
-                title,
-                description,
-                image: imageLocalPath,
-                type
-            }
-        },
-        { new: true }
-    ).select("-type")
-
+     return res
+         .status(200)
+         .json(
+             new ApiResponse(200, domain, `${type} updated successfully`)
+         )
+ 
+   } catch (error) {
     return res
-        .status(200)
-        .json(
-            new ApiResponse(200, domain, `${type} updated successfully`)
-        )
-
+    .status(error.statusCode || 500)
+    .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Domain`))
+   }
 })
 
 const updateStatusCategory = asyncHandler(async (req, res) => {
-    const { Id, status } = req.query
-    const type = req.path.split("/")[1];
-    if (!Id || !status) {
+    try {
+        const { Id, status } = req.query
+        const type = req.path.split("/")[1];
+        if (!Id || !status) {
+            throw new ApiError(400, `All fileds are required`)
+        }
+    
+        const domain = await Domain.findByIdAndUpdate(
+            Id,
+            {
+                $set: {
+                    status: status
+                }
+            },
+            { new: true }
+        ).select("-type")
+    
+        if (!domain) {
+            throw new ApiError(500, `Something went wrong while status update ${type}`)
+          }
+
         return res
-            .status(400)
-            .json(new ApiError(400, "Id And Status are required"))
+            .status(200)
+            .json(
+                new ApiResponse(200, domain, `${type} Status updated successfully`)
+            )
+    } catch (error) {
+        return res
+        .status(error.statusCode || 500)
+        .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Domain`))
     }
-
-    const domain = await Domain.findByIdAndUpdate(
-        Id,
-        {
-            $set: {
-                status: status
-            }
-        },
-        { new: true }
-    ).select("-type")
-
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(200, domain, `${type} Status updated successfully`)
-        )
 })
 
 const deleteCategory = asyncHandler(async (req, res) => {

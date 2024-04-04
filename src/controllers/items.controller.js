@@ -47,165 +47,189 @@ const getAllItem = asyncHandler(async (req, res) => {
 })
 
 const getActiveItem = asyncHandler(async (req, res) => {
+    try {
+        const { limit = 200, startIndex = 0, bussinessId } = req.body
 
-    const { limit = 200, startIndex = 0, bussinessId } = req.body
-
-    if (!bussinessId) {
+        if (!bussinessId) {
+            throw new ApiError(400, `BussinessId is required`)
+        }
+        const type = req.path.split("/")[1];
+        const category = await Item.find({ bussinessId: bussinessId, type: type, status: 'active' })
+            .select("-type")
+            .sort("-_id")
+            .skip(startIndex)
+            .limit(limit)
+            .exec();
+        if (!category) {
+            throw new ApiError(500, `Something went wrong while fetching ${type}`)
+        }
         return res
-            .status(400)
-            .json(new ApiError(400, "BussinessId is required"))
+            .status(200)
+            .json(
+                new ApiResponse(200, category, `${type} List Fetched successfully`)
+            )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Items`))
     }
-    const type = req.path.split("/")[1];
-    const category = await Item.find({ bussinessId: bussinessId, type: type, status: 'active' })
-        .select("-type")
-        .sort("-_id")
-        .skip(startIndex)
-        .limit(limit)
-        .exec();
-
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(200, category, `${type} List Fetched successfully`)
-        )
 })
 
 const addItem = asyncHandler(async (req, res) => {
-    const { bussinessId, title, description, rate, stock ,unitId} = req.body
-    const type = req.path.split("/")[1];
-    const imageLocalPath = req.file?.filename
+    try {
+        const { bussinessId, title, description, rate, stock, unitId } = req.body
+        const type = req.path.split("/")[1];
+        const imageLocalPath = req.file?.filename
 
-    if (!title || !rate) {
+        if (!bussinessId) {
+            throw new ApiError(400, `BussinessId is required`)
+        }
+
+        if (!title || !rate) {
+            throw new ApiError(400, `Title and Rate are required`)
+        }
+
+        if (!imageLocalPath) {
+            throw new ApiError(400, `image is required`)
+        }
+
+        const item = await Item.create({
+            title,
+            description,
+            image: imageLocalPath,
+            type: type,
+            bussinessId,
+            rate,
+            stock,
+            unit: unitId,
+            owner: req.vendor._id,
+        })
+
+        const createdItem = await Item.findById(item._id)
+
+        if (!createdItem) {
+            throw new ApiError(500, `Something went wrong while Adding ${type}`)
+        }
+
+        return res.status(201).json(
+            new ApiResponse(200, createdItem, `${type} Added Successfully`)
+        )
+
+    } catch (error) {
         return res
-            .status(400)
-            .json(new ApiError(400, "Title and Rate are required"))
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Items`))
     }
-
-    if (!imageLocalPath) {
-        return res
-            .status(400)
-            .json(new ApiError(400, "image is missing"))
-    }
-
-    const item = await Item.create({
-        title,
-        description,
-        image: imageLocalPath,
-        type: type,
-        bussinessId,
-        rate,
-        stock,
-        unit:unitId,
-        owner: req.vendor._id,
-    })
-
-    const createdItem = await Item.findById(item._id)
-
-    if (!createdItem) {
-        return res
-            .status(500)
-            .json(new ApiError(500, `Something went wrong while adding the ${type}`, error))
-
-    }
-
-    return res.status(201).json(
-        new ApiResponse(200, createdItem, `${type} Added Successfully`)
-    )
-
 })
 
 const getItemById = asyncHandler(async (req, res) => {
+    try {
 
-    const { Id } = req.query
-    const type = req.path.split("/")[1];
-    const createdItem = await Item.findById(Id)
+        const { Id } = req.query
+        const type = req.path.split("/")[1];
+        const createdItem = await Item.findById(Id)
 
-    if (!createdItem) {
+        if (!createdItem) {
+            throw new ApiError(500, `Something went wrong while fetching ${type}`)
+        }
+
+        return res.status(201).json(
+            new ApiResponse(200, createdItem, `${type} fetched Successfully`)
+        )
+    } catch (error) {
         return res
-            .status(500)
-            .json(new ApiError(500, `Something went wrong while fetching ${type}`, error))
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Items`))
     }
-
-    return res.status(201).json(
-        new ApiResponse(200, createdItem, `${type} fetched Successfully`)
-    )
 })
 
 const updateItem = asyncHandler(async (req, res) => {
-    const { Id, title, description, rate, stock,unitId } = req.body
-    const imageLocalPath = req.file?.filename
-    const type = req.path.split("/")[1];
+    try {
+        const { Id, title, description, rate, stock, unitId } = req.body
+        const image = req.file?.filename
+        const type = req.path.split("/")[1];
+    
+        if(!Id){
+            image !='' && image != undefined ? fs.unlinkSync(`public/itemImages/${image}`) : null;
+            throw new ApiError(400, `Id is required`)
+        }
+       
+        if (!title || !rate) {
+            image !='' && image != undefined ? fs.unlinkSync(`public/itemImages/${image}`) : null;
+            throw new ApiError(400, `Title and rate are required`)
+        }
+    
+        const itemImage = await Item.findById(Id).select("image");
+    
+        if (image !='' && image != undefined && itemImage.image || itemImage.image != '') {
+            fs.unlinkSync(`public/itemImages/${itemImage.image}`);
+        }
+        
+        const item = await Item.findByIdAndUpdate(
+            Id,
+            {
+                $set: {
+                    title,
+                    description,
+                    image,
+                    type,
+                    rate,
+                    stock,
+                    unit: unitId
+                }
+            },
+            { new: true }
+        ).select("-type")
+    
+        if (!item) {
+            throw new ApiError(500, `Something went wrong while update ${type}`)
+        }
 
-
-    if (!title || !rate) {
         return res
-            .status(400)
-            .json(new ApiError(400, "Title and Rate are required"))
-    }
-
-    if (!imageLocalPath) {
+            .status(200)
+            .json(
+                new ApiResponse(200, item, `${type} updated successfully`)
+            )
+    
+    } catch (error) {
         return res
-            .status(400)
-            .json(new ApiError(400, "image is missing"))
+        .status(error.statusCode || 500)
+        .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Items`))
     }
-
-    const itemImage = await Item.findById(Id).select("image");
-
-    if (itemImage.image || itemImage.image != '') {
-        fs.unlinkSync(`public/itemImages/${itemImage.image}`);
-    }
-
-
-
-
-    const item = await Item.findByIdAndUpdate(
-        Id,
-        {
-            $set: {
-                title,
-                description,
-                image: imageLocalPath,
-                type,
-                rate,
-                stock,
-                unit:unitId
-            }
-        },
-        { new: true }
-    ).select("-type")
-
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(200, item, `${type} updated successfully`)
-        )
-
 })
 
 const updateStatusItem = asyncHandler(async (req, res) => {
-    const { Id, status } = req.query
-    const type = req.path.split("/")[1];
-    if (!Id || !status) {
-        return res
-            .status(400)
-            .json(new ApiError(400, "Id And Status are required"))
+   try {
+     const { Id, status } = req.query
+     const type = req.path.split("/")[1];
+     if (!Id || !status) {
+        throw new ApiError(400, `Id and status are required`)
+     }
+ 
+     const item = await Item.findByIdAndUpdate(
+         Id,
+         {
+             $set: {
+                 status: status
+             }
+         },
+         { new: true }
+     ).select("-type")
+ 
+     if (!item) {
+        throw new ApiError(500, `Something went wrong while update status ${type}`)
     }
 
-    const item = await Item.findByIdAndUpdate(
-        Id,
-        {
-            $set: {
-                status: status
-            }
-        },
-        { new: true }
-    ).select("-type")
-
+     return res
+         .status(200)
+         .json(
+             new ApiResponse(200, item, `${type} Status updated successfully`)
+         )
+   } catch (error) {
     return res
-        .status(200)
-        .json(
-            new ApiResponse(200, item, `${type} Status updated successfully`)
-        )
+    .status(error.statusCode || 500)
+    .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Items`))
+   }
 })
 
 const deleteItem = asyncHandler(async (req, res) => {

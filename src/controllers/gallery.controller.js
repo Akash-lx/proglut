@@ -7,7 +7,7 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 import fs from "fs"
 
 const getAllGallery = asyncHandler(async (req, res) => {
-    const { limit = 20, pageNumber = 0 ,bussinessId} = req.body
+    const { limit = 20, pageNumber = 0, bussinessId } = req.body
 
     if (!bussinessId) {
         return res
@@ -17,7 +17,7 @@ const getAllGallery = asyncHandler(async (req, res) => {
 
     const type = req.path.split("/")[1];
     const result = {};
-    const totalPosts = await Gallery.countDocuments({bussinessId:bussinessId,type:type}).exec();
+    const totalPosts = await Gallery.countDocuments({ bussinessId: bussinessId, type: type }).exec();
     let startIndex = pageNumber * limit;
     const endIndex = (pageNumber + 1) * limit;
     result.totalPosts = totalPosts;
@@ -33,7 +33,7 @@ const getAllGallery = asyncHandler(async (req, res) => {
             limit: limit,
         };
     }
-    result.data = await Gallery.find({bussinessId:bussinessId, type: type })
+    result.data = await Gallery.find({ bussinessId: bussinessId, type: type })
         .sort("-_id")
         .skip(startIndex)
         .limit(limit)
@@ -48,162 +48,191 @@ const getAllGallery = asyncHandler(async (req, res) => {
 
 const getActiveGallery = asyncHandler(async (req, res) => {
 
-    const { limit = 200, startIndex = 0 ,bussinessId} = req.body
+    try {
+        const { limit = 200, startIndex = 0, bussinessId } = req.body
 
-    if (!bussinessId) {
+        if (!bussinessId) {
+            throw new ApiError(400, `BussinessId is required`)
+        }
+        const type = req.path.split("/")[1];
+        const category = await Gallery.find({ bussinessId: bussinessId, type: type, status: 'active' })
+            .select("-type")
+            .sort("-_id")
+            .skip(startIndex)
+            .limit(limit)
+            .exec();
+
+        if (!category) {
+            throw new ApiError(500, `Something went wrong while fetching ${type}`)
+        }
+
         return res
-            .status(400)
-            .json(new ApiError(400, "BussinessId is required"))
+            .status(200)
+            .json(
+                new ApiResponse(200, category, `${type} List Fetched successfully`)
+            )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Gallery`))
     }
-    const type = req.path.split("/")[1];
-    const category = await Gallery.find({bussinessId:bussinessId, type: type, status: 'active' })
-        .select("-type")
-        .sort("-_id")
-        .skip(startIndex)
-        .limit(limit)
-        .exec();
-
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(200, category, `${type} List Fetched successfully`)
-        )
 })
 
 const addGallery = asyncHandler(async (req, res) => {
-    const { bussinessId, title, description } = req.body
-    const type = req.path.split("/")[1];
-    const imageLocalPath = req.file?.filename
-    // console.log(req.body)
-    // console.log(req)
-    if(type == 'rules'){
-        if (!title) {
-            return res
-                .status(400)
-                .json(new ApiError(400, "title is required"))
-        }
-    } else if(type == 'gallery'){
-        if (!imageLocalPath) {
-            return res
-                .status(400)
-                .json(new ApiError(400, "image is missing"))
-        }
-    }
-    
-  
-    const gallery = await Gallery.create({
-        title,
-        description,
-        image: imageLocalPath,
-        type: type,
-        bussinessId,
-        owner: req.vendor._id,
-    })
+   try {
+     const { bussinessId, title, description } = req.body
+     const type = req.path.split("/")[1];
+     const image = req.file?.filename
+   
+     if(!bussinessId){
+        throw new ApiError(400, `BussinessId is required`)
+     }
 
-    const createdGallery = await Gallery.findById(gallery._id)
-
-    if (!createdGallery) {
-        return res
-            .status(500)
-            .json(new ApiError(500, `Something went wrong while adding the ${type}`, error))
-
-    }
-
-    return res.status(201).json(
-        new ApiResponse(200, createdGallery, `${type} Added Successfully`)
-    )
+     if (type == 'rules') {
+         if (!title) {
+            throw new ApiError(400, `Title is required`)
+         }
+     } else if (type == 'gallery') {
+         if (!image) {
+            throw new ApiError(400, `Image is Missing`)
+         }
+     }
+ 
+ 
+     const gallery = await Gallery.create({
+         title,
+         description,
+         image,
+         type: type,
+         bussinessId,
+         owner: req.vendor._id,
+     })
+ 
+     const createdGallery = await Gallery.findById(gallery._id)
+ 
+     if (!createdGallery) {
+        throw new ApiError(500, `Something went wrong while fetching ${type} list`)
+ 
+     }
+ 
+     return res.status(201).json(
+         new ApiResponse(200, createdGallery, `${type} Added Successfully`)
+     )
+   } catch (error) {
+    return res
+    .status(error.statusCode || 500)
+    .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Gallery`))
+   }
 
 })
 
 const getGalleryById = asyncHandler(async (req, res) => {
 
-    const { Id } = req.query
-    const type = req.path.split("/")[1];
-    const createdGallery = await Gallery.findById(Id)
-
-    if (!createdGallery) {
-        return res
-            .status(500)
-            .json(new ApiError(500, `Something went wrong while fetching ${type}`, error))
-    }
-
-    return res.status(201).json(
-        new ApiResponse(200, createdGallery, `${type} fetched Successfully`)
-    )
+   try {
+     const { Id } = req.query
+     const type = req.path.split("/")[1];
+     const createdGallery = await Gallery.findById(Id)
+ 
+     if (!createdGallery) {
+        throw new ApiError(500, `Something went wrong while fetching ${type}`)
+      }
+ 
+     return res.status(201).json(
+         new ApiResponse(200, createdGallery, `${type} fetched Successfully`)
+     )
+   } catch (error) {
+    return res
+    .status(error.statusCode || 500)
+    .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Gallery`))
+   }
 })
 
 const updateGallery = asyncHandler(async (req, res) => {
-    const { Id, title, description } = req.body
-    const imageLocalPath = req.file?.filename
-    const type = req.path.split("/")[1];
+   try {
+     const { Id, title, description } = req.body
+     const image = req.file?.filename
+     const type = req.path.split("/")[1];
+ 
+     if (type == 'rules') {
+         if (!title) {
+            throw new ApiError(400, `title is required`)
+         }
+     } else if (type == 'gallery') {
+         if (!image) {
+            throw new ApiError(400, `Image is missing`)
+         }
+ 
+         const galleryImage = await Gallery.findById(Id).select("image");
+ 
+         if (galleryImage.image && galleryImage.image != '') {
+             fs.unlinkSync(`public/galleryImages/${galleryImage.image}`);
+         }
+ 
+     }
+ 
+ 
+     const gallery = await Gallery.findByIdAndUpdate(
+         Id,
+         {
+             $set: {
+                 title,
+                 description,
+                 image,
+                 type
+             }
+         },
+         { new: true }
+     ).select("-type")
 
-    if(type == 'rules'){
-        if (!title) {
-            return res
-                .status(400)
-                .json(new ApiError(400, "title is required"))
-        }
-    } else if(type == 'gallery'){
-        if (!imageLocalPath) {
-            return res
-                .status(400)
-                .json(new ApiError(400, "image is missing"))
-        }
+     if (!gallery) {
+        throw new ApiError(500, `Something went wrong while update ${type}`)
+      }
 
-        const galleryImage = await Gallery.findById(Id).select("image");
-
-        if (galleryImage.image && galleryImage.image != '') {
-            fs.unlinkSync(`public/galleryImages/${galleryImage.image}`);
-        }
-
-    }
-
-   
-    const gallery = await Gallery.findByIdAndUpdate(
-        Id,
-        {
-            $set: {
-                title,
-                description,
-                image: imageLocalPath,
-                type
-            }
-        },
-        { new: true }
-    ).select("-type")
-
+     return res
+         .status(200)
+         .json(
+             new ApiResponse(200, gallery, `${type} updated successfully`)
+         )
+   } catch (error) {
     return res
-        .status(200)
-        .json(
-            new ApiResponse(200, gallery, `${type} updated successfully`)
-        )
+    .status(error.statusCode || 500)
+    .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Gallery`))
+   }
 
 })
 
 const updateStatusGallery = asyncHandler(async (req, res) => {
-    const { Id, status } = req.query
-    const type = req.path.split("/")[1];
-    if (!Id || !status) {
-        return res
-            .status(400)
-            .json(new ApiError(400, "Id And Status are required"))
-    }
+   try {
+     const { Id, status } = req.query
+     const type = req.path.split("/")[1];
+     if (!Id || !status) {
+        throw new ApiError(400, `Id and status are required`)
+     }
+ 
+     const gallery = await Gallery.findByIdAndUpdate(
+         Id,
+         {
+             $set: {
+                 status: status
+             }
+         },
+         { new: true }
+     ).select("-type")
+ 
+     if (!gallery) {
+        throw new ApiError(500, `Something went wrong while update status ${type}`)
+      }
 
-    const gallery = await Gallery.findByIdAndUpdate(
-        Id,
-        {
-            $set: {
-                status: status
-            }
-        },
-        { new: true }
-    ).select("-type")
-
+     return res
+         .status(200)
+         .json(
+             new ApiResponse(200, gallery, `${type} Status updated successfully`)
+         )
+   } catch (error) {
     return res
-        .status(200)
-        .json(
-            new ApiResponse(200, gallery, `${type} Status updated successfully`)
-        )
+    .status(error.statusCode || 500)
+    .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Gallery`))
+   }
 })
 
 const deleteGallery = asyncHandler(async (req, res) => {
