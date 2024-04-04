@@ -197,62 +197,133 @@ const updateEventlogo = asyncHandler(async (req, res) => {
 
 })
 
-// const updateStatusEvent = asyncHandler(async (req, res) => {
-//     const { Id } = req.query
-//     if (!Id) {
-//         return res
-//             .status(400)
-//             .json(new ApiError(400, "Id is required"))
-//     }
-
-//     const event = await Event.findByIdAndUpdate(
-//         Id,
-//         {
-//             $set: {
-//                 isPublished: !isPublished
-//             }
-//         },
-//         { new: true }
-//     ).select()
-
-//     return res
-//         .status(200)
-//         .json(
-//             new ApiResponse(200, event, `event Status updated successfully`)
-//         )
-// })
-
-
-const getAllEvent = asyncHandler(async (req, res) => {
-    const { limit = 20, pageNumber = 0 } = req.body
-    const result = {};
-    const totalPosts = await Event.countDocuments().exec();
-    let startIndex = pageNumber * limit;
-    const endIndex = (pageNumber + 1) * limit;
-    result.totalPosts = totalPosts;
-    if (startIndex > 0) {
-        result.previous = {
-            pageNumber: pageNumber - 1,
-            limit: limit,
-        };
+const updateStatusEvent = asyncHandler(async (req, res) => {
+    const { Id, status } = req.query
+    if (!Id || !status) {
+        return res
+            .status(400)
+            .json(new ApiError(400, "Id and status are required"))
     }
-    if (endIndex < (totalPosts)) {
-        result.next = {
-            pageNumber: pageNumber + 1,
-            limit: limit,
-        };
-    }
-    result.data = await Event.find()
-        .sort("-_id")
-        .skip(startIndex)
-        .limit(limit)
-        .exec();
-    result.rowsPerPage = limit;
+
+    const event = await Event.findByIdAndUpdate(
+        Id,
+        {
+            $set: {
+                status: !status
+            }
+        },
+        { new: true }
+    ).select()
+
     return res
         .status(200)
         .json(
-            new ApiResponse(200, result, `event List Fetched successfully`)
+            new ApiResponse(200, event, `event Status updated successfully`)
         )
+})
+
+
+const getAllEvent = asyncHandler(async (req, res) => {
+    try {
+        const { limit = 200, startIndex = 0, bussinessId, vendorId, status } = req.query
+
+        const query = {}
+        if (bussinessId && bussinessId != undefined) { query["bussinessId"] = new mongoose.Types.ObjectId(bussinessId) };
+        if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
+        if (status && status != undefined) { query["status"] = status };
+        // console.log(query);
+        const event = await Event.aggregate([
+            {
+                $match: query
+            },
+            {
+                $lookup: {
+                    from: "vendors",
+                    localField: "owner",
+                    foreignField: "_id",
+                    as: "owner",
+                    pipeline: [{
+                        $project: {
+                            fullName: 1,
+                            profileImage: 1,
+                            usertype: 1,
+                            status: 1,
+
+                        }
+                    }
+                    ]
+                }
+            },
+            {
+                $lookup: {
+                    from: "bussinesses",
+                    localField: "bussinessId",
+                    foreignField: "_id",
+                    as: "bussiness",
+                    pipeline: [{
+                        $project: {
+                            brandLogo: 1,
+                            title: 1,
+
+                        }
+                    }
+                    ]
+                }
+            },
+            {
+                $lookup: {
+                    from: "reviews",
+                    localField: "_id",
+                    foreignField: "eventId",
+                    as: "reviews"
+                }
+            },
+            {
+                $addFields: {
+                    reviewcount: {
+                        $size: "$reviews"
+                    },
+                    rating: {
+                        $avg: "$reviews.rating"
+                    },
+
+                }
+            },
+            {
+                $project: {
+                    coverImages: 1,
+                    title: 1,
+                    address: 1,
+                    entryFee: 1,
+                    dateTime: 1,
+                    status: 1,
+                    rating: 1,
+                    reviewcount: 1,
+                    bussiness: 1,
+                    owner:1,
+                }
+            }, { $sort: { _id: -1 } },
+            { $skip: parseInt(startIndex) },
+            { $limit: parseInt(limit) },
+        ])
+
+        if (!event) {
+            throw new ApiError(500, `Something went wrong while fetching Event list`)
+        } else if (event.length == 0) {
+            throw new ApiError(404, `NO Data Found ! Event list is empty`)
+
+        }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, event, `Event List Fetched successfully`)
+            )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Event`))
+    }
 })
 
 const getActiveEvent = asyncHandler(async (req, res) => {
@@ -263,7 +334,7 @@ const getActiveEvent = asyncHandler(async (req, res) => {
         const query = {}
         if (bussinessId && bussinessId != undefined) { query["bussinessId"] = new mongoose.Types.ObjectId(bussinessId) };
         if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
-
+        query["status"] = "active";
         // console.log(query);
         const event = await Event.aggregate([
             {
@@ -311,7 +382,7 @@ const getActiveEvent = asyncHandler(async (req, res) => {
                     address: 1,
                     entryFee: 1,
                     dateTime: 1,
-                    isPublished: 1,
+                    status: 1,
                     rating: 1,
                     reviewcount: 1,
                     bussiness: 1,
@@ -391,7 +462,7 @@ const getMyEvent = asyncHandler(async (req, res) => {
                     address: 1,
                     entryFee: 1,
                     dateTime: 1,
-                    isPublished: 1,
+                    status: 1,
                     rating: 1,
                     reviewcount: 1,
                     bussiness: 1,
@@ -460,7 +531,7 @@ export {
     addEventInfo,
     getEventById,
     updateEventInfo,
-    // updateStatusEvent,
+    updateStatusEvent,
     deleteEvent,
     updateEventlogo,
     getMyEvent,

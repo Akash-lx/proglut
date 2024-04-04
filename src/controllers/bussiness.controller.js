@@ -139,7 +139,7 @@ const getBussinessById = asyncHandler(async (req, res) => {
                     title: 1,
                     rating: 1,
                     reviewcount: 1,
-                    isPublished: 1,
+                    status: 1,
                     domain: 1,
                     description: 1,
                     address: 1,
@@ -269,15 +269,15 @@ const updateBussinesslogo = asyncHandler(async (req, res) => {
 
 const updateStatusBussiness = asyncHandler(async (req, res) => {
     try {
-        const { Id } = req.query
-        if (!Id) {
-            throw new ApiError(400, "Id is required")
+        const { Id,status } = req.query
+        if (!Id || !status) {
+            throw new ApiError(400, "Id and status are required")
         }
         const bussiness = await Bussiness.findByIdAndUpdate(
             Id,
             {
                 $set: {
-                    isPublished: !isPublished
+                    status:status
                 }
             },
             { new: true }
@@ -296,36 +296,137 @@ const updateStatusBussiness = asyncHandler(async (req, res) => {
 })
 
 
-const getAllBussiness = asyncHandler(async (req, res) => {
-    const { limit = 20, pageNumber = 0 } = req.query
-    const result = {};
-    const totalPosts = await Bussiness.countDocuments().exec();
-    let startIndex = pageNumber * limit;
-    const endIndex = (pageNumber + 1) * limit;
-    result.totalPosts = totalPosts;
-    if (startIndex > 0) {
-        result.previous = {
-            pageNumber: pageNumber - 1,
-            limit: limit,
-        };
-    }
-    if (endIndex < (totalPosts)) {
-        result.next = {
-            pageNumber: pageNumber + 1,
-            limit: limit,
-        };
-    }
-    result.data = await Bussiness.find()
-        .sort("-_id")
-        .skip(startIndex)
-        .limit(limit)
-        .exec();
-    result.rowsPerPage = limit;
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(200, result, `bussiness List Fetched successfully`)
-        )
+// const getAllBussiness = asyncHandler(async (req, res) => {
+//     const { limit = 20, pageNumber = 0 } = req.query
+//     const result = {};
+//     const totalPosts = await Bussiness.countDocuments().exec();
+//     let startIndex = pageNumber * limit;
+//     const endIndex = (pageNumber + 1) * limit;
+//     result.totalPosts = totalPosts;
+//     if (startIndex > 0) {
+//         result.previous = {
+//             pageNumber: pageNumber - 1,
+//             limit: limit,
+//         };
+//     }
+//     if (endIndex < (totalPosts)) {
+//         result.next = {
+//             pageNumber: pageNumber + 1,
+//             limit: limit,
+//         };
+//     }
+//     result.data = await Bussiness.find()
+//         .sort("-_id")
+//         .skip(startIndex)
+//         .limit(limit)
+//         .exec();
+//     result.rowsPerPage = limit;
+//     return res
+//         .status(200)
+//         .json(
+//             new ApiResponse(200, result, `bussiness List Fetched successfully`)
+//         )
+// })
+
+const getAllBussiness = asyncHandler(async (req,res) => {
+    try {
+        const { limit = 200, startIndex = 0, domain, vendorId,status } = req.query
+    
+        const query = {}
+        if (domain && domain != undefined) { query["domain"] = new mongoose.Types.ObjectId(domain) };
+        if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
+        if (status && status != undefined) { query["status"] = status };
+    
+        // console.log(query);
+        const bussiness = await Bussiness.aggregate([
+            {
+                $match: query
+            },
+            {
+                $lookup: {
+                    from: "vendors",
+                    localField: "owner",
+                    foreignField: "_id",
+                    as: "owner",
+                    pipeline: [{
+                        $project: {
+                            fullName: 1,
+                            profileImage: 1,
+                            usertype: 1,
+                            status: 1,
+
+                        }
+                    }
+                    ]
+                }
+            }, {
+                $lookup: {
+                    from: "domains",
+                    localField: "domain",
+                    foreignField: "_id",
+                    as: "domain",
+                    pipeline: [{
+                        $project: {
+                            title: 1,
+
+                        }
+                    }
+                    ]
+                },
+            },
+            {
+                $lookup: {
+                    from: "reviews",
+                    localField: "_id",
+                    foreignField: "bussinessId",
+                    as: "reviews"
+                }
+            },
+            {
+                $addFields: {
+                    reviewcount: {
+                        $size: "$reviews"
+                    },
+                    rating: {
+                        $avg: "$reviews.rating"
+                    },
+    
+                }
+            },
+            {
+                $project: {
+                    coverImage: 1,
+                    brandLogo: 1,
+                    title: 1,
+                    address: 1,
+                    status: 1,
+                    rating: 1,
+                    reviewcount: 1,
+                    owner:1,
+                    domain:1,
+                }
+            }, { $sort: { _id: -1 } },
+            { $skip: parseInt(startIndex) },
+            { $limit: parseInt(limit) },
+        ])
+    
+        if (!bussiness) {
+           throw new ApiError(500, `Something went wrong while fetching Bussiness list`)
+        } else if (bussiness.length == 0) {
+           throw new ApiError(404,  `NO Data Found ! Bussiness list is empty`)
+           
+        }
+   
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, bussiness, `bussiness List Fetched successfully`)
+            )
+      } catch (error) {
+       return res
+       .status(error.statusCode || 500)
+       .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Bussiness`))
+      }
 })
 
 const getActiveBussiness = asyncHandler(async (req, res) => {
@@ -336,7 +437,7 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
      const query = {}
      if (domain && domain != undefined) { query["domain"] = new mongoose.Types.ObjectId(domain) };
      if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
- 
+     query["status"] = "active";
      // console.log(query);
      const bussiness = await Bussiness.aggregate([
          {
@@ -367,7 +468,7 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
                  brandLogo: 1,
                  title: 1,
                  address: 1,
-                 isPublished: 1,
+                 status: 1,
                  rating: 1,
                  reviewcount: 1,
              }
@@ -429,7 +530,7 @@ const getMyBussiness = asyncHandler(async (req, res) => {
                     brandLogo: 1,
                     title: 1,
                     address: 1,
-                    isPublished: 1,
+                    status: 1,
                     rating: 1,
                     reviewcount: 1,
                 }

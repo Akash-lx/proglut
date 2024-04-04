@@ -75,9 +75,11 @@ const bussinessSchema = new Schema(
 
             }
         ],
-        isPublished: {
-            type: Boolean,
-            default: true
+        status: {
+            type: String,
+            enum: ['pending', 'active', 'in-active','reject','delete'],
+            default: 'pending',
+            index: true
         },
         domain: {
             type: Schema.Types.ObjectId,
