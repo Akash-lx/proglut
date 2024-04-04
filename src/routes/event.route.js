@@ -4,7 +4,7 @@ import {
 addEventInfo,
 getEventById,
 updateEventInfo,
-// updateStatusEvent,
+updateStatusEvent,
 // deleteEvent,
 getActiveEvent,
 updateEventlogo,
@@ -25,8 +25,8 @@ router.route("/logo").patch(bussinessUpload.array('coverImages', 5),updateEventl
 
 router
     .route("/detail")
-    .get(getEventById);
-    // .patch(updateStatusEvent);
+    .get(getEventById)
+    .patch(updateStatusEvent);
     // .delete(deleteEvent)
 
 router.route("/active").get(getActiveEvent);
