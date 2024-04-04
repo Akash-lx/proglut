@@ -71,9 +71,17 @@ const eventSchema = new Schema(
             type: Boolean,
             default: true
         },
+        amenities: [{
+            type: Schema.Types.ObjectId,
+            ref: "Domain"
+        }],
         bussinessId: {
             type: Schema.Types.ObjectId,
             ref: "Bussiness"
+        },
+        hostName: {
+            type:String,
+        
         },
         owner: {
             type: Schema.Types.ObjectId,

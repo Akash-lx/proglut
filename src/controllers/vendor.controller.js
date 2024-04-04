@@ -357,7 +357,7 @@ const updateVendorProfile = asyncHandler(async (req, res) => {
                     },
                     mobile,
                     email,
-                    passwor
+                    password
                 }
             },
             { new: true }
@@ -424,11 +424,11 @@ const updateVendorStatus = asyncHandler(async (req, res) => {
     try {
         const usertype = req.path.split("/")[1];
         const { Id, status } = req.body
-    
+
         if (!Id || !status) {
             throw new ApiError(400, "Vendor Id and Status are required")
         }
-    
+
         const vendor = await Vendor.findByIdAndUpdate(
             Id,
             {
@@ -438,12 +438,12 @@ const updateVendorStatus = asyncHandler(async (req, res) => {
             },
             { new: true }
         ).select("-otp -refreshToken")
-    
+
         if (!vendor) {
             throw new ApiError(500, `Something went wrong while status update the ${usertype}`)
         }
-    
-    
+
+
         return res
             .status(200)
             .json(
@@ -451,41 +451,69 @@ const updateVendorStatus = asyncHandler(async (req, res) => {
             )
     } catch (error) {
         return res
-        .status(error.statusCode || 500)
-        .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in UpdateInfo'))
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in UpdateInfo'))
     }
 })
 
 const getVendorsList = asyncHandler(async (req, res) => {
-   try {
-     const usertype = req.path.split("/")[1];
-     const { limit = 200, startIndex = 0 } = req.body
- 
-     const vendor = await Vendor.find({ usertype: usertype })
-         .select("-otp -refreshToken")
-         .sort("-_id")
-         .skip(startIndex)
-         .limit(limit)
-         .exec();
- 
-     if (!vendor) {
-        throw new ApiError(500, `Something went wrong while fetching ${usertype} list`)
-     } else if (vendor.length == 0) {
-        throw new ApiError(404,  `Data Not Found ! ${usertype} list is empty`)
-        
-     }
- 
- 
-     return res
-         .status(200)
-         .json(
-             new ApiResponse(200, vendor, `${usertype} List Fetched successfully`)
-         )
-   } catch (error) {
-    return res
-    .status(error.statusCode || 500)
-    .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in UpdateInfo'))
-   }
+    try {
+        const usertype = req.path.split("/")[1];
+        const { limit = 200, startIndex = 0 } = req.body
+
+        const vendor = await Vendor.find({ usertype: usertype })
+            .select("-otp -refreshToken")
+            .sort("-_id")
+            .skip(startIndex)
+            .limit(limit)
+            .exec();
+
+        if (!vendor) {
+            throw new ApiError(500, `Something went wrong while fetching ${usertype} list`)
+        } else if (vendor.length == 0) {
+            throw new ApiError(404, `Data Not Found ! ${usertype} list is empty`)
+
+        }
+
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, vendor, `${usertype} List Fetched successfully`)
+            )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in UpdateInfo'))
+    }
+})
+
+const getVendorDetail = asyncHandler(async (req, res) => {
+    try {
+        const usertype = req.path.split("/")[1];
+        const { Id } = req.query
+
+        if (!Id) {
+            throw new ApiError(400, `Id is required`)
+        }
+
+        const vendor = await Vendor.findOne({ _id: Id, usertype: usertype })
+            .select("-otp -refreshToken -password").exec();
+
+        if (!vendor) {
+            throw new ApiError(500, `Invaild Id for ${usertype} Detail`)
+        }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, vendor, `${usertype} List Fetched successfully`)
+            )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in Vendor'))
+    }
 })
 
 
@@ -525,58 +553,108 @@ const getPaginateVendors = asyncHandler(async (req, res) => {
 })
 
 const adminLogin = asyncHandler(async (req, res) => {
-   
-   try {
-     const usertype = req.path.split("/")[1];
-     const { email, mobile, password } = req.body
- 
-     if (!mobile && !email) {
-        throw new ApiError(400, "mobile or email is required")
-     }
-     if (!password) {
-        throw new ApiError(400, "Password is required")
-     }
- 
-     const vendor = await Vendor.findOne({
-         usertype: usertype,
-         $or: [{ mobile }, { email }]
-     })
- 
-     if (!vendor) {
-        throw new ApiError(404, `${usertype} does not exist`)
-     } else if (vendor.status != 'active') {
-        throw new ApiError(403, `${usertype} is ${vendor.status} ! please contact admin`)
-     }
-  
-     const isPasswordValid = vendor.password == password ? true : false;
- 
-     if (!isPasswordValid) {
-        throw new ApiError(401, `Password Not Matched`)
-     }
- 
-     const { accessToken, refreshToken } = await generateWebAccessToken(vendor._id)
- 
-    
-     const options = {
-         httpOnly: true,
-         secure: true
-     }
-      return res
-         .status(200)
-         .cookie("accessToken", accessToken, options)
-         .cookie("refreshToken", refreshToken, options)
-         .json(
-             new ApiResponse( 200, vendor, `${usertype} logged In Successfully`, { "accessToken": accessToken, "refreshToken": refreshToken }
-             )
-         )
-   } catch (error) {
-    return res
-    .status(error.statusCode || 500)
-    .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in Admin Login'))
-   }
+
+    try {
+        const usertype = req.path.split("/")[1];
+        const { email, mobile, password } = req.body
+
+        if (!mobile && !email) {
+            throw new ApiError(400, "mobile or email is required")
+        }
+        if (!password) {
+            throw new ApiError(400, "Password is required")
+        }
+
+        const vendor = await Vendor.findOne({
+            usertype: usertype,
+            $or: [{ mobile }, { email }]
+        })
+
+        if (!vendor) {
+            throw new ApiError(404, `${usertype} does not exist`)
+        } else if (vendor.status != 'active') {
+            throw new ApiError(403, `${usertype} is ${vendor.status} ! please contact admin`)
+        }
+
+        const isPasswordValid = vendor.password == password ? true : false;
+
+        if (!isPasswordValid) {
+            throw new ApiError(401, `Password Not Matched`)
+        }
+
+        const { accessToken, refreshToken } = await generateWebAccessToken(vendor._id)
+
+
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", refreshToken, options)
+            .json(
+                new ApiResponse(200, vendor, `${usertype} logged In Successfully`, { "accessToken": accessToken, "refreshToken": refreshToken }
+                )
+            )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in Admin Login'))
+    }
 
 })
 
+const updateVendorDetail = asyncHandler(async (req, res) => {
+
+    try {
+        const {Id, fullName, gender, city, state, street, area, pincode, latitude, longitude, mobile, email} = req.body
+        const usertype = req.path.split("/")[1];
+        if (!Id) {
+            throw new ApiError(400, "Id is required")
+        }
+        if (!fullName || !gender) {
+            throw new ApiError(400, "FullName And Gender are required")
+        }
+
+        const vendor = await Vendor.findByIdAndUpdate(
+           Id,
+            {
+                $set: {
+                    fullName,
+                    gender,
+                    address: {
+                        city,
+                        state,
+                        street,
+                        area,
+                        pincode,
+                        latitude,
+                        longitude
+                    },
+                    mobile,
+                    email,
+                   
+                }
+            },
+            { new: true }
+
+        ).select("-otp -refreshToken -password")
+
+        if (!vendor) {
+            throw new ApiError(500, `Something went wrong while UpdateInfo the ${usertype}`)
+        }
+
+        return res
+            .status(200)
+            .json(new ApiResponse(200, vendor, `${usertype} details updated successfully`))
+
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in UpdateInfo'))
+    }
+});
 
 export {
     registerVendor,
@@ -592,6 +670,8 @@ export {
     getVendorsList,
     getPaginateVendors,
     adminLogin,
+    getVendorDetail,
+    updateVendorDetail
     // getVendorChannelProfile,
     // getWatchHistory
 }

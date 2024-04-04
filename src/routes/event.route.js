@@ -9,7 +9,7 @@ updateEventInfo,
 getActiveEvent,
 updateEventlogo,
 getMyEvent,
-// addAminities
+addAminities
 } from "../controllers/event.controller.js"
 import {verifyVendorJWT} from "../middlewares/auth.middleware.js"
 import {bussinessUpload} from "../middlewares/multer.middleware.js"
@@ -32,11 +32,6 @@ router
 router.route("/active").get(getActiveEvent);
 router.route("/my").get(verifyVendorJWT,getMyEvent);
 
-// router.route("/aminities/")
-// // .get(verifyVendorJWT, getAllActivity)
-//     .post(verifyVendorJWT, addAminities);
-//     // .delete(verifyVendorJWT, deleteActivity);
-//     // .patch(itemUpload.single("image"), updateActivity);
-
+router.route("/aminities/").post(verifyVendorJWT, addAminities);
 
 export default router

@@ -13,6 +13,8 @@ import {
     getVendorsList,
     getPaginateVendors,
     adminLogin,
+    getVendorDetail,
+    updateVendorDetail
     // getVendorChannelProfile, 
     // getWatchHistory
 } from "../controllers/vendor.controller.js";
@@ -37,6 +39,7 @@ router.route("/vendor/update-account").patch(verifyVendorJWT, updateVendorProfil
 router.route("/vendor/update-image").patch(verifyVendorJWT, vendorUpload.single("profileImage"), updateVendorImage)
 router.route("/vendor/update-status").patch(updateVendorStatus)
 router.route("/vendor/all").get(getVendorsList)
+router.route("/vendor/detail").get(getVendorDetail).patch(updateVendorDetail)
 router.route("/vendor/page-vendor").get(getPaginateVendors)
 
 router.route("/user/register").post(registerVendor)
@@ -53,6 +56,7 @@ router.route("/user/update-account").patch(verifyVendorJWT, updateVendorProfile)
 router.route("/user/update-image").patch(verifyVendorJWT, userUpload.single("profileImage"), updateVendorImage)
 router.route("/user/update-status").patch(updateVendorStatus)
 router.route("/user/all").get(getVendorsList)
+router.route("/user/detail").get(getVendorDetail).patch(updateVendorDetail)
 router.route("/user/page-user").get(getPaginateVendors)
 
 router.route("/admin/login").post(adminLogin)

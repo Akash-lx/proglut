@@ -330,56 +330,69 @@ const getAllBussiness = asyncHandler(async (req, res) => {
 
 const getActiveBussiness = asyncHandler(async (req, res) => {
 
-    const { limit = 200, startIndex = 0, domain, vendorId } = req.query
+   try {
+     const { limit = 200, startIndex = 0, domain, vendorId } = req.query
+ 
+     const query = {}
+     if (domain && domain != undefined) { query["domain"] = new mongoose.Types.ObjectId(domain) };
+     if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
+ 
+     // console.log(query);
+     const bussiness = await Bussiness.aggregate([
+         {
+             $match: query
+         },
+         {
+             $lookup: {
+                 from: "reviews",
+                 localField: "_id",
+                 foreignField: "bussinessId",
+                 as: "reviews"
+             }
+         },
+         {
+             $addFields: {
+                 reviewcount: {
+                     $size: "$reviews"
+                 },
+                 rating: {
+                     $avg: "$reviews.rating"
+                 },
+ 
+             }
+         },
+         {
+             $project: {
+                 coverImage: 1,
+                 brandLogo: 1,
+                 title: 1,
+                 address: 1,
+                 isPublished: 1,
+                 rating: 1,
+                 reviewcount: 1,
+             }
+         }, { $sort: { _id: -1 } },
+         { $skip: parseInt(startIndex) },
+         { $limit: parseInt(limit) },
+     ])
+ 
+     if (!bussiness) {
+        throw new ApiError(500, `Something went wrong while fetching Bussiness list`)
+     } else if (bussiness.length == 0) {
+        throw new ApiError(404,  `NO Data Found ! Bussiness list is empty`)
+        
+     }
 
-    const query = {}
-    if (domain && domain != undefined) { query["domain"] = new mongoose.Types.ObjectId(domain) };
-    if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
-
-    // console.log(query);
-    const bussiness = await Bussiness.aggregate([
-        {
-            $match: query
-        },
-        {
-            $lookup: {
-                from: "reviews",
-                localField: "_id",
-                foreignField: "bussinessId",
-                as: "reviews"
-            }
-        },
-        {
-            $addFields: {
-                reviewcount: {
-                    $size: "$reviews"
-                },
-                rating: {
-                    $avg: "$reviews.rating"
-                },
-
-            }
-        },
-        {
-            $project: {
-                coverImage: 1,
-                brandLogo: 1,
-                title: 1,
-                address: 1,
-                isPublished: 1,
-                rating: 1,
-                reviewcount: 1,
-            }
-        }, { $sort: { _id: -1 } },
-        { $skip: parseInt(startIndex) },
-        { $limit: parseInt(limit) },
-    ])
-
+     return res
+         .status(200)
+         .json(
+             new ApiResponse(200, bussiness, `bussiness List Fetched successfully`)
+         )
+   } catch (error) {
     return res
-        .status(200)
-        .json(
-            new ApiResponse(200, bussiness, `bussiness List Fetched successfully`)
-        )
+    .status(error.statusCode || 500)
+    .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Bussiness`))
+   }
 })
 
 const getMyBussiness = asyncHandler(async (req, res) => {
