@@ -8,36 +8,37 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 import fs from "fs"
 
 const getAllMaster = asyncHandler(async (req, res) => {
-    const { limit = 20, pageNumber = 0 } = req.query
-    const type = req.path.split("/")[1];
-    const result = {};
-    const totalPosts = await Master.countDocuments({ type: type }).exec();
-    let startIndex = pageNumber * limit;
-    const endIndex = (pageNumber + 1) * limit;
-    result.totalPosts = totalPosts;
-    if (startIndex > 0) {
-        result.previous = {
-            pageNumber: pageNumber - 1,
-            limit: limit,
-        };
+    try {
+        const { limit = 200, startIndex = 0,status } = req.query
+        const type = req.path.split("/")[1];
+
+        const query = {}
+        query["type"] = type;
+       if (status && status != undefined) { query["status"] = status }else { query["status"] = {$ne:"delete"}};
+
+        const master = await Master.find(query)
+            .select("-type")
+            .sort("-_id")
+            .skip(startIndex)
+            .limit(limit)
+            .exec();
+
+            if (!master) {
+                throw new ApiError(500, `Something went wrong while fetching ${type}`)
+            } else if (master.length == 0) {
+                throw new ApiError(404,  `NO Data Found ! ${type} list is empty`)
+             }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, master, `${type} List Fetched successfully`)
+            )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Master`))
     }
-    if (endIndex < (totalPosts)) {
-        result.next = {
-            pageNumber: pageNumber + 1,
-            limit: limit,
-        };
-    }
-    result.data = await Master.find({ type: type })
-        .sort("-_id")
-        .skip(startIndex)
-        .limit(limit)
-        .exec();
-    result.rowsPerPage = limit;
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(200, result, `${type} List Fetched successfully`)
-        )
 })
 
 const getActiveMaster = asyncHandler(async (req, res) => {
@@ -52,9 +53,11 @@ const getActiveMaster = asyncHandler(async (req, res) => {
             .limit(limit)
             .exec();
 
-        if (!master) {
-            throw new ApiError(500, `Something went wrong while fetching ${type}`)
-        }
+            if (!master) {
+                throw new ApiError(500, `Something went wrong while fetching ${type}`)
+            } else if (master.length == 0) {
+                throw new ApiError(404,  `NO Data Found ! ${type} list is empty`)
+             }
 
         return res
             .status(200)

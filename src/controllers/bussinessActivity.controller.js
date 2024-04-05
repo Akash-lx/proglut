@@ -8,41 +8,35 @@ import fs from "fs"
 
 const getAllActivity = asyncHandler(async (req, res) => {
     try {
-        const { limit = 20, pageNumber = 0, bussinessId } = req.query
+        const { limit = 200, startIndex = 0, bussinessId ,status} = req.query
 
         if (!bussinessId) {
             throw new ApiError(400, `BussinessId is required`)
         }
 
-        // const type = req.path.split("/")[1];
-        const result = {};
-        const totalPosts = await Activities.countDocuments({ bussinessId: bussinessId }).exec();
-        let startIndex = pageNumber * limit;
-        const endIndex = (pageNumber + 1) * limit;
-        result.totalPosts = totalPosts;
-        if (startIndex > 0) {
-            result.previous = {
-                pageNumber: pageNumber - 1,
-                limit: limit,
-            };
-        }
-        if (endIndex < (totalPosts)) {
-            result.next = {
-                pageNumber: pageNumber + 1,
-                limit: limit,
-            };
-        }
+        const query = {}
+         query["bussinessId"] = new mongoose.Types.ObjectId(bussinessId);
+        if (status && status != undefined) { query["status"] = status }else { query["status"] = {$ne:"delete"}};
 
-        result.data = await Activities.find({ bussinessId: bussinessId })
+        const category = await Activities.find(query)
+            .populate({ path: "activityId", select: "image title" })
+            .select("-type")
             .sort("-_id")
             .skip(startIndex)
             .limit(limit)
             .exec();
-        result.rowsPerPage = limit;
+
+        if (!category) {
+            throw new ApiError(500, `Something went wrong while fetching Activities list`)
+        } else if (category.length == 0) {
+            throw new ApiError(404, `Data Not Found ! Activitiy list is empty`)
+
+        }
+
         return res
             .status(200)
             .json(
-                new ApiResponse(200, result, `Activities List Fetched successfully`)
+                new ApiResponse(200, category, `Activities List Fetched successfully`)
             )
     } catch (error) {
         return res

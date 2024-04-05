@@ -7,43 +7,43 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 import fs from "fs"
 
 const getAllGallery = asyncHandler(async (req, res) => {
-    const { limit = 20, pageNumber = 0, bussinessId } = req.query
+    try {
+        const { limit = 200, startIndex = 0, bussinessId,status } = req.query
 
-    if (!bussinessId) {
+        if (!bussinessId) {
+            throw new ApiError(400, `BussinessId is required`)
+        }
+        const type = req.path.split("/")[1];
+
+        const query = {}
+        query["bussinessId"] = new mongoose.Types.ObjectId(bussinessId);
+        query["type"] = type;
+       if (status && status != undefined) { query["status"] = status }else { query["status"] = {$ne:"delete"}};
+
+
+        const category = await Gallery.find(query)
+            .select("-type")
+            .sort("-_id")
+            .skip(startIndex)
+            .limit(limit)
+            .exec();
+
+        if (!category) {
+            throw new ApiError(500, `Something went wrong while fetching ${type}`)
+        } else if (category.length == 0) {
+            throw new ApiError(404,  `NO Data Found ! ${type} list is empty`)
+         }
+
         return res
-            .status(400)
-            .json(new ApiError(400, "BussinessId is required"))
+            .status(200)
+            .json(
+                new ApiResponse(200, category, `${type} List Fetched successfully`)
+            )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Gallery`))
     }
-
-    const type = req.path.split("/")[1];
-    const result = {};
-    const totalPosts = await Gallery.countDocuments({ bussinessId: bussinessId, type: type }).exec();
-    let startIndex = pageNumber * limit;
-    const endIndex = (pageNumber + 1) * limit;
-    result.totalPosts = totalPosts;
-    if (startIndex > 0) {
-        result.previous = {
-            pageNumber: pageNumber - 1,
-            limit: limit,
-        };
-    }
-    if (endIndex < (totalPosts)) {
-        result.next = {
-            pageNumber: pageNumber + 1,
-            limit: limit,
-        };
-    }
-    result.data = await Gallery.find({ bussinessId: bussinessId, type: type })
-        .sort("-_id")
-        .skip(startIndex)
-        .limit(limit)
-        .exec();
-    result.rowsPerPage = limit;
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(200, result, `${type} List Fetched successfully`)
-        )
 })
 
 const getActiveGallery = asyncHandler(async (req, res) => {
@@ -64,7 +64,9 @@ const getActiveGallery = asyncHandler(async (req, res) => {
 
         if (!category) {
             throw new ApiError(500, `Something went wrong while fetching ${type}`)
-        }
+        } else if (category.length == 0) {
+            throw new ApiError(404,  `NO Data Found ! ${type} list is empty`)
+         }
 
         return res
             .status(200)

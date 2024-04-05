@@ -787,8 +787,10 @@ const getReviews = asyncHandler(async (req, res) => {
         ])
     
         if (!review) {
-            throw new ApiError(500, `Something went wrong while fetching review list`)
-        }
+            throw new ApiError(500, `Something went wrong while fetching Review`)
+        } else if (review.length == 0) {
+            throw new ApiError(404,  `NO Data Found ! Review list is empty`)
+         }
     
         return res
             .status(200)

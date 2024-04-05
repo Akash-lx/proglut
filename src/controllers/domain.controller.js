@@ -8,18 +8,25 @@ import fs from "fs"
 
 const getAllCategory = asyncHandler(async (req, res) => {
     try {
-        const { limit = 200, startIndex = 0 } = req.query
+        const { limit = 200, startIndex = 0 ,status} = req.query
         const type = req.path.split("/")[1];
-        const category = await Domain.find({ type: type, status: { $ne: 'delete' } })
+
+        const query = {}
+        query["type"] = type;
+       if (status && status != undefined) { query["status"] = status }else { query["status"] = {$ne:"delete"}};
+
+        const category = await Domain.find(query)
             .select("-type")
             .sort("-_id")
             .skip(startIndex)
             .limit(limit)
             .exec();
 
-        if (!category) {
-            throw new ApiError(500, `Something went wrong while fetching ${type} list`)
-        }
+            if (!category) {
+                throw new ApiError(500, `Something went wrong while fetching ${type}`)
+            } else if (category.length == 0) {
+                throw new ApiError(404,  `NO Data Found ! ${type} list is empty`)
+             }
 
         return res
             .status(200)
@@ -44,9 +51,11 @@ const getActiveCategory = asyncHandler(async (req, res) => {
             .limit(limit)
             .exec();
 
-        if (!category) {
-            throw new ApiError(500, `Something went wrong while fetching ${type} list`)
-        }
+            if (!category) {
+                throw new ApiError(500, `Something went wrong while fetching ${type}`)
+            } else if (category.length == 0) {
+                throw new ApiError(404,  `NO Data Found ! ${type} list is empty`)
+             }
 
         return res
             .status(200)
