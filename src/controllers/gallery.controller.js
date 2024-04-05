@@ -7,7 +7,7 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 import fs from "fs"
 
 const getAllGallery = asyncHandler(async (req, res) => {
-    const { limit = 20, pageNumber = 0, bussinessId } = req.body
+    const { limit = 20, pageNumber = 0, bussinessId } = req.query
 
     if (!bussinessId) {
         return res
@@ -49,7 +49,7 @@ const getAllGallery = asyncHandler(async (req, res) => {
 const getActiveGallery = asyncHandler(async (req, res) => {
 
     try {
-        const { limit = 200, startIndex = 0, bussinessId } = req.body
+        const { limit = 200, startIndex = 0, bussinessId } = req.query
 
         if (!bussinessId) {
             throw new ApiError(400, `BussinessId is required`)

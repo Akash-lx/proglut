@@ -464,7 +464,7 @@ const updateVendorStatus = asyncHandler(async (req, res) => {
 const getVendorsList = asyncHandler(async (req, res) => {
     try {
         const usertype = req.path.split("/")[1];
-        const { limit = 200, startIndex = 0 } = req.body
+        const { limit = 200, startIndex = 0 } = req.query
 
         const vendor = await Vendor.find({ usertype: usertype })
             .select("-otp -refreshToken")
@@ -524,7 +524,7 @@ const getVendorDetail = asyncHandler(async (req, res) => {
 
 const getPaginateVendors = asyncHandler(async (req, res) => {
 
-    const { limit = 20, pageNumber = 0 } = req.body
+    const { limit = 20, pageNumber = 0 } = req.query
     const usertype = req.path.split("/")[1];
     const result = {};
     const totalPosts = await Vendor.countDocuments({ usertype: usertype }).exec();

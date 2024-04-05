@@ -8,7 +8,7 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 import fs from "fs"
 
 const getAllMaster = asyncHandler(async (req, res) => {
-    const { limit = 20, pageNumber = 0 } = req.body
+    const { limit = 20, pageNumber = 0 } = req.query
     const type = req.path.split("/")[1];
     const result = {};
     const totalPosts = await Master.countDocuments({ type: type }).exec();
@@ -43,7 +43,7 @@ const getAllMaster = asyncHandler(async (req, res) => {
 const getActiveMaster = asyncHandler(async (req, res) => {
 
     try {
-        const { limit = 200, startIndex = 0 } = req.body
+        const { limit = 200, startIndex = 0 } = req.query
         const type = req.path.split("/")[1];
         const master = await Master.find({ type: type, status: 'active' })
             .select("-type")
