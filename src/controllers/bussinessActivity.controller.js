@@ -8,15 +8,15 @@ import fs from "fs"
 
 const getAllActivity = asyncHandler(async (req, res) => {
     try {
-        const { limit = 200, startIndex = 0, bussinessId ,status} = req.query
+        const { limit = 200, startIndex = 0, bussinessId, status } = req.query
 
         if (!bussinessId) {
             throw new ApiError(400, `BussinessId is required`)
         }
 
         const query = {}
-         query["bussinessId"] = new mongoose.Types.ObjectId(bussinessId);
-        if (status && status != undefined) { query["status"] = status }else { query["status"] = {$ne:"delete"}};
+        query["bussinessId"] = new mongoose.Types.ObjectId(bussinessId);
+        if (status && status != undefined) { query["status"] = status } else { query["status"] = { $ne: "delete" } };
 
         const category = await Activities.find(query)
             .populate({ path: "activityId", select: "image title" })
@@ -88,27 +88,28 @@ const addActivity = asyncHandler(async (req, res) => {
             throw new ApiError(400, `ActivityId BussinessId are required`)
         }
         const itemsmap = [];
-        activityId.map((x) => {
+         await activityId.map(async (x) => {
 
             let obj = {};
             obj["activityId"] = x;
             obj["bussinessId"] = bussinessId;
             obj["owner"] = req.vendor._id;
-            itemsmap.push(obj)
 
+            const checkActivity = await Activities.findOne(obj).select('_id');
 
+            if (!checkActivity) {
+                const activity = await Activities.create(obj)
+
+                if (!activity) {
+                    throw new ApiError(500, `Something went wrong while Add Activities list`)
+                }
+
+                itemsmap.push(activity)
+            }
         })
 
-        // console.log(itemsmap);
-
-        const activity = await Activities.insertMany(itemsmap)
-
-        if (!activity) {
-            throw new ApiError(500, `Something went wrong while Add Activities list`)
-        }
-
         return res.status(201).json(
-            new ApiResponse(200, activity, `Activities Added Successfully`)
+            new ApiResponse(200, itemsmap, `Activities Added Successfully`)
         )
 
     } catch (error) {
@@ -140,6 +141,29 @@ const getActivityById = asyncHandler(async (req, res) => {
     }
 })
 
+const deleteBussinessActivity = asyncHandler(async (req, res) => {
+    try {
+        const { bussActivityId } = req.query
+
+        if (!bussActivityId) {
+            throw new ApiError(400, `Bussiness Activity is required`)
+        }
+        const deleteSlot = await Activities.findByIdAndDelete(bussActivityId)
+
+        if (!deleteSlot) {
+            throw new ApiError(500, `Something went wrong while delete Business Activity`)
+        }
+
+        return res.status(201).json(
+            new ApiResponse(200, deleteSlot, `Business Activity Deleted Successfully`)
+        )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in delete Business Activity'))
+    }
+
+})
 
 const getActivitySlots = asyncHandler(async (req, res) => {
     try {
@@ -190,57 +214,18 @@ const getActivitySlots = asyncHandler(async (req, res) => {
 
 
 const addSlot = asyncHandler(async (req, res) => {
-   try {
-     const { title, days, startTime, endTime, maxseat, duration, rate, bussActivityId } = req.body
- 
-     if (!days || !bussActivityId || !startTime || !endTime || !maxseat || !rate) {
-        throw new ApiError(400, `All fileds are required`)
-     }
- 
-     const addSlot = await Activities.findByIdAndUpdate(
-         bussActivityId,
-         {
-             $push: {
-                 slots: {
-                     title,
-                     days,
-                     startTime,
-                     endTime,
-                     maxseat,
-                     duration,
-                     rate,
-                 }
-             }
- 
-         }, { new: true })
- 
-         if (!addSlot) {
-            throw new ApiError(500, `Something went wrong while add slot`)
-        }
-
-     return res.status(201).json(
-         new ApiResponse(200, addSlot, `Activity Slot Added Successfully`)
-     )
-   } catch (error) {
-    return res
-    .status(error.statusCode || 500)
-    .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in add Activity Slot'))
-   }
-
-})
-
-const updateSlot = asyncHandler(async (req, res) => {
     try {
-        const { Id, title, days, startTime, endTime, maxseat, duration, rate, bussActivityId } = req.body
-    
-        if (!Id || !days || !bussActivityId || !startTime || !endTime || !maxseat || !rate) {
+        const { title, days, startTime, endTime, maxseat, duration, rate, bussActivityId } = req.body
+
+        if (!days || !bussActivityId || !startTime || !endTime || !maxseat || !rate) {
             throw new ApiError(400, `All fileds are required`)
         }
-        const updateSlot = await Activities.updateOne(
-            { _id: bussActivityId, 'slots._id': { $eq: Id } },
+
+        const addSlot = await Activities.findByIdAndUpdate(
+            bussActivityId,
             {
-                $set: {
-                    "slots.$": {
+                $push: {
+                    slots: {
                         title,
                         days,
                         startTime,
@@ -250,28 +235,68 @@ const updateSlot = asyncHandler(async (req, res) => {
                         rate,
                     }
                 }
-    
+
             }, { new: true })
-    
-            if (!updateSlot) {
-                throw new ApiError(500, `Something went wrong while update Slot`)
-            }
+
+        if (!addSlot) {
+            throw new ApiError(500, `Something went wrong while add slot`)
+        }
+
+        return res.status(201).json(
+            new ApiResponse(200, addSlot, `Activity Slot Added Successfully`)
+        )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in add Activity Slot'))
+    }
+
+})
+
+const updateSlot = asyncHandler(async (req, res) => {
+    try {
+        const { Id, title, days, startTime, endTime, maxseat, duration, rate, bussActivityId } = req.body
+
+        if (!Id || !days || !bussActivityId || !startTime || !endTime || !maxseat || !rate) {
+            throw new ApiError(400, `All fileds are required`)
+        }
+        const updateSlot = await Activities.updateOne(
+            { _id: bussActivityId, 'slots._id': { $eq: Id } },
+            {
+                $set: {
+                    "slots.$": {
+                        _id:Id,
+                        title,
+                        days,
+                        startTime,
+                        endTime,
+                        maxseat,
+                        duration,
+                        rate,
+                    }
+                }
+
+            }, { new: true })
+
+        if (!updateSlot) {
+            throw new ApiError(500, `Something went wrong while update Slot`)
+        }
 
         return res.status(201).json(
             new ApiResponse(200, updateSlot, `Slot detail Updated Successfully`)
         )
-    
+
     } catch (error) {
         return res
-        .status(error.statusCode || 500)
-        .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in update SLot'))
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in update SLot'))
     }
 })
 
 const deleteSlot = asyncHandler(async (req, res) => {
     try {
-        const { Id, bussActivityId } = req.body
-    
+        const { Id, bussActivityId } = req.query
+
         if (!Id || !bussActivityId) {
             throw new ApiError(400, `All fileds are required`)
         }
@@ -281,20 +306,20 @@ const deleteSlot = asyncHandler(async (req, res) => {
                 $pull: {
                     slots: { _id: Id }
                 }
-    
+
             }, { new: true })
-    
-            if (!deleteSlot) {
-                throw new ApiError(500, `Something went wrong while delete Slot`)
-            }
+
+        if (!deleteSlot) {
+            throw new ApiError(500, `Something went wrong while delete Slot`)
+        }
 
         return res.status(201).json(
             new ApiResponse(200, deleteSlot, `Slot Deleted Successfully`)
         )
     } catch (error) {
         return res
-        .status(error.statusCode || 500)
-        .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in delete Slot'))
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in delete Slot'))
     }
 
 })
@@ -304,7 +329,7 @@ export {
     getActiveActivity,
     addActivity,
     getActivityById,
-
+    deleteBussinessActivity,
     getActivitySlots,
     addSlot,
     updateSlot,

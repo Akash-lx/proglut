@@ -143,6 +143,7 @@ const getBussinessById = asyncHandler(async (req, res) => {
                     domain: 1,
                     description: 1,
                     address: 1,
+                    rules: 1,
                     bussinessHour: 1,
                     amenities_list: 1,
                     owner: 1,
@@ -269,7 +270,7 @@ const updateBussinesslogo = asyncHandler(async (req, res) => {
 
 const updateStatusBussiness = asyncHandler(async (req, res) => {
     try {
-        const { Id,status } = req.query
+        const { Id, status } = req.query
         if (!Id || !status) {
             throw new ApiError(400, "Id and status are required")
         }
@@ -277,7 +278,7 @@ const updateStatusBussiness = asyncHandler(async (req, res) => {
             Id,
             {
                 $set: {
-                    status:status
+                    status: status
                 }
             },
             { new: true }
@@ -328,15 +329,15 @@ const updateStatusBussiness = asyncHandler(async (req, res) => {
 //         )
 // })
 
-const getAllBussiness = asyncHandler(async (req,res) => {
+const getAllBussiness = asyncHandler(async (req, res) => {
     try {
-        const { limit = 200, startIndex = 0, domain, vendorId,status } = req.query
-    
+        const { limit = 200, startIndex = 0, domain, vendorId, status } = req.query
+
         const query = {}
         if (domain && domain != undefined) { query["domain"] = new mongoose.Types.ObjectId(domain) };
         if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
         if (status && status != undefined) { query["status"] = status };
-    
+
         // console.log(query);
         const bussiness = await Bussiness.aggregate([
             {
@@ -390,7 +391,7 @@ const getAllBussiness = asyncHandler(async (req,res) => {
                     rating: {
                         $avg: "$reviews.rating"
                     },
-    
+
                 }
             },
             {
@@ -402,98 +403,98 @@ const getAllBussiness = asyncHandler(async (req,res) => {
                     status: 1,
                     rating: 1,
                     reviewcount: 1,
-                    owner:1,
-                    domain:1,
+                    owner: 1,
+                    domain: 1,
                 }
             }, { $sort: { _id: -1 } },
             { $skip: parseInt(startIndex) },
             { $limit: parseInt(limit) },
         ])
-    
+
         if (!bussiness) {
-           throw new ApiError(500, `Something went wrong while fetching Bussiness list`)
+            throw new ApiError(500, `Something went wrong while fetching Bussiness list`)
         } else if (bussiness.length == 0) {
-           throw new ApiError(404,  `NO Data Found ! Bussiness list is empty`)
-           
+            throw new ApiError(404, `NO Data Found ! Bussiness list is empty`)
+
         }
-   
+
         return res
             .status(200)
             .json(
                 new ApiResponse(200, bussiness, `bussiness List Fetched successfully`)
             )
-      } catch (error) {
-       return res
-       .status(error.statusCode || 500)
-       .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Bussiness`))
-      }
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Bussiness`))
+    }
 })
 
 const getActiveBussiness = asyncHandler(async (req, res) => {
 
-   try {
-     const { limit = 200, startIndex = 0, domain, vendorId } = req.query
- 
-     const query = {}
-     if (domain && domain != undefined) { query["domain"] = new mongoose.Types.ObjectId(domain) };
-     if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
-     query["status"] = "active";
-     // console.log(query);
-     const bussiness = await Bussiness.aggregate([
-         {
-             $match: query
-         },
-         {
-             $lookup: {
-                 from: "reviews",
-                 localField: "_id",
-                 foreignField: "bussinessId",
-                 as: "reviews"
-             }
-         },
-         {
-             $addFields: {
-                 reviewcount: {
-                     $size: "$reviews"
-                 },
-                 rating: {
-                     $avg: "$reviews.rating"
-                 },
- 
-             }
-         },
-         {
-             $project: {
-                 coverImage: 1,
-                 brandLogo: 1,
-                 title: 1,
-                 address: 1,
-                 status: 1,
-                 rating: 1,
-                 reviewcount: 1,
-             }
-         }, { $sort: { _id: -1 } },
-         { $skip: parseInt(startIndex) },
-         { $limit: parseInt(limit) },
-     ])
- 
-     if (!bussiness) {
-        throw new ApiError(500, `Something went wrong while fetching Bussiness list`)
-     } else if (bussiness.length == 0) {
-        throw new ApiError(404,  `NO Data Found ! Bussiness list is empty`)
-        
-     }
+    try {
+        const { limit = 200, startIndex = 0, domain, vendorId } = req.query
 
-     return res
-         .status(200)
-         .json(
-             new ApiResponse(200, bussiness, `bussiness List Fetched successfully`)
-         )
-   } catch (error) {
-    return res
-    .status(error.statusCode || 500)
-    .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Bussiness`))
-   }
+        const query = {}
+        if (domain && domain != undefined) { query["domain"] = new mongoose.Types.ObjectId(domain) };
+        if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
+        query["status"] = "active";
+        // console.log(query);
+        const bussiness = await Bussiness.aggregate([
+            {
+                $match: query
+            },
+            {
+                $lookup: {
+                    from: "reviews",
+                    localField: "_id",
+                    foreignField: "bussinessId",
+                    as: "reviews"
+                }
+            },
+            {
+                $addFields: {
+                    reviewcount: {
+                        $size: "$reviews"
+                    },
+                    rating: {
+                        $avg: "$reviews.rating"
+                    },
+
+                }
+            },
+            {
+                $project: {
+                    coverImage: 1,
+                    brandLogo: 1,
+                    title: 1,
+                    address: 1,
+                    status: 1,
+                    rating: 1,
+                    reviewcount: 1,
+                }
+            }, { $sort: { _id: -1 } },
+            { $skip: parseInt(startIndex) },
+            { $limit: parseInt(limit) },
+        ])
+
+        if (!bussiness) {
+            throw new ApiError(500, `Something went wrong while fetching Bussiness list`)
+        } else if (bussiness.length == 0) {
+            throw new ApiError(404, `NO Data Found ! Bussiness list is empty`)
+
+        }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, bussiness, `bussiness List Fetched successfully`)
+            )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Bussiness`))
+    }
 })
 
 const getMyBussiness = asyncHandler(async (req, res) => {
@@ -583,6 +584,184 @@ const addAminities = asyncHandler(async (req, res) => {
         return res
             .status(error.statusCode || 500)
             .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in add Aminities'))
+    }
+
+})
+
+const addRules = asyncHandler(async (req, res) => {
+    try {
+        const { rules, bussinessId } = req.body
+
+        if (!rules || !bussinessId) {
+            throw new ApiError(400, `rules and Bussiness Id are required`)
+        }
+
+        const rulelist = await Bussiness.findByIdAndUpdate(
+            bussinessId,
+            {
+                // $addToSet: { amenities: aminityId }
+                $set: { rules: rules }
+            }, { new: true })
+
+        if (!rulelist) {
+            throw new ApiError(500, `Something went wrong while adding Rules list`)
+        }
+
+        return res.status(201).json(
+            new ApiResponse(200, rulelist, `Rules Added Successfully`)
+        )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in add rules'))
+    }
+
+})
+
+const getGallery = asyncHandler(async (req, res) => {
+    try {
+        const { bussinessId } = req.query
+
+        if (!bussinessId) {
+            throw new ApiError(400, `BussinessId is required`)
+        }
+
+        // const query = {}
+        // query['_id'] = new mongoose.Types.ObjectId(bussinessId)
+        // if (day && day != undefined) { query["slots.days"] = day };
+
+        const gallerylist = await Bussiness.findById(bussinessId).select("gallery")
+
+        // const gallerylist = await Bussiness.aggregate([
+        //     {
+        //         $unwind: "$gallerys"
+        //     },
+        //     {
+        //         $match: query
+        //     },
+        //     {
+        //         $group: {
+        //             _id: "$gallerys",
+        //         }
+        //     }
+        // ])
+
+        const gallerydata = []
+        gallerylist.gallery.forEach((element) => {
+            gallerydata.push(element);
+        })
+
+        if (gallerydata.length == 0) {
+            throw new ApiError(404, `Data Not Found ! list is empty`)
+        }
+
+
+        return res.status(201).json(
+            new ApiResponse(200, gallerydata, `Gallery List Fetch Successfully`)
+        )
+
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in Activity Gallery'))
+    }
+})
+
+
+const addGallery = asyncHandler(async (req, res) => {
+    try {
+        const { title, bussinessId } = req.body
+
+        if (!bussinessId) {
+            throw new ApiError(400, `BussinessId is required`)
+        }
+
+        const imagearr = [];
+        req.files.map((item, index) => {
+            // console.log(item.filename);
+            const galey = {};
+           if(title && title[index]){ galey['title'] = title[index];}
+            galey['image'] = item.filename;
+            imagearr.push(galey);
+        });
+        if (imagearr.length == 0) {
+            throw new ApiError(400, `Images are required`)
+        }
+
+        const addGallery = await Bussiness.findByIdAndUpdate(
+            bussinessId,
+            {
+                $push: {
+                    gallery: imagearr
+                }
+
+            }, { new: true })
+
+        if (!addGallery) {
+            throw new ApiError(500, `Something went wrong while add package`)
+        }
+
+        return res.status(201).json(
+            new ApiResponse(200, addGallery, `Gallery Added Successfully`)
+        )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in add Gallery'))
+    }
+
+})
+
+
+const deleteGallery = asyncHandler(async (req, res) => {
+    try {
+        const { Id, bussinessId } = req.query
+
+        if (!Id || !bussinessId) {
+            throw new ApiError(400, `BussinessId and Id are required`)
+        }
+
+      
+        const galleryImages = await Bussiness.aggregate([
+            {
+                $unwind: "$gallery"
+            },
+            {
+                $match: {_id : new mongoose.Types.ObjectId(bussinessId),
+                    "gallery._id": new mongoose.Types.ObjectId(Id)
+                }
+            },
+            {
+                $group: {
+                    _id: "$gallery.image",
+                }
+            }
+        ])
+
+        if (galleryImages && galleryImages[0]._id ) {
+                fs.unlinkSync(`public/galleryImages/${galleryImages[0]._id}`);
+          }
+
+        const deleteGallery = await Bussiness.updateOne(
+            { _id: bussinessId },
+            {
+                $pull: {
+                    gallery: { _id: Id }
+                }
+
+            }, { new: true })
+
+        if (!deleteGallery) {
+            throw new ApiError(500, `Something went wrong while delete Gallery`)
+        }
+
+        return res.status(201).json(
+            new ApiResponse(200, deleteGallery, `Gallery Deleted Successfully`)
+        )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in delete Gallery'))
     }
 
 })
@@ -682,6 +861,7 @@ const updateBussinessHour = asyncHandler(async (req, res) => {
             {
                 $set: {
                     "bussinessHour.$": {
+                        _id: Id,
                         title,
                         days,
                         startTime,
@@ -708,7 +888,7 @@ const updateBussinessHour = asyncHandler(async (req, res) => {
 
 const deleteBussinessHour = asyncHandler(async (req, res) => {
     try {
-        const { Id, bussinessId } = req.body
+        const { Id, bussinessId } = req.query
 
         if (!Id || !bussinessId) {
             throw new ApiError(400, `All fileds are required`)
@@ -731,8 +911,8 @@ const deleteBussinessHour = asyncHandler(async (req, res) => {
         )
     } catch (error) {
         return res
-        .status(error.statusCode || 500)
-        .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in delete Bussinesshour'))
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in delete Bussinesshour'))
     }
 
 })
@@ -746,11 +926,11 @@ const deleteBussiness = asyncHandler(async (req, res) => {
 const getReviews = asyncHandler(async (req, res) => {
     try {
         const { limit = 200, startIndex = 0, bussinessId, eventId } = req.query
-    
+
         if (!bussinessId && !eventId) {
             throw new ApiError(400, `BussinessId Or EventId is required`)
         }
-    
+
         const review = await Review.aggregate([
             {
                 $match: {
@@ -785,13 +965,13 @@ const getReviews = asyncHandler(async (req, res) => {
             { $skip: parseInt(startIndex) },
             { $limit: parseInt(limit) },
         ])
-    
+
         if (!review) {
             throw new ApiError(500, `Something went wrong while fetching Review`)
         } else if (review.length == 0) {
-            throw new ApiError(404,  `NO Data Found ! Review list is empty`)
-         }
-    
+            throw new ApiError(404, `NO Data Found ! Review list is empty`)
+        }
+
         return res
             .status(200)
             .json(
@@ -799,34 +979,34 @@ const getReviews = asyncHandler(async (req, res) => {
             )
     } catch (error) {
         return res
-        .status(error.statusCode || 500)
-        .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in get reviews'))
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in get reviews'))
     }
 })
 
 const addReview = asyncHandler(async (req, res) => {
     try {
         const { rating, content, bussinessId, eventId } = req.body
-    
+
         if (!rating) {
             throw new ApiError(400, `Rating is required`)
         }
         if (!bussinessId && !eventId) {
             throw new ApiError(400, `BussinessId Or EventId is required`)
         }
-    
+
         // const existedReview = await Review.findOne({
         //     owner: req.vendor._id,
         //     $or: [{ bussinessId }, { eventId }]
         // })
-    
+
         // if (existedReview) {
         //     return res
         //         .status(409)
         //         .json(new ApiError(409, `${type} with same title already exists`))
         //     // throw new ApiError(409, "User with email or mobile already exists")
         // }
-    
+
         const review = await Review.create({
             rating,
             content,
@@ -834,20 +1014,20 @@ const addReview = asyncHandler(async (req, res) => {
             eventId,
             owner: req.vendor._id
         })
-    
+
         const createdReview = await Review.findById(review._id)
-    
+
         if (!createdReview) {
             throw new ApiError(500, `Something went wrong while adding review`)
         }
-    
+
         return res.status(201).json(
             new ApiResponse(200, createdReview, `Review Added Successfully`)
         )
     } catch (error) {
         return res
-        .status(error.statusCode || 500)
-        .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in add review'))
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in add review'))
     }
 
 })
@@ -870,5 +1050,9 @@ export {
     deleteBussinessHour,
     getMyBussiness,
     getReviews,
-    addReview
+    addReview,
+    addRules,
+    getGallery,
+    addGallery,
+    deleteGallery,
 }

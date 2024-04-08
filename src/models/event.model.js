@@ -22,11 +22,11 @@ const eventSchema = new Schema(
             },
             state: {
                 type: String,
-              
+
             },
             street: {
                 type: String,
-              
+
             },
             area: {
                 type: String,
@@ -45,31 +45,47 @@ const eventSchema = new Schema(
             }
         },
 
-        entryFee: {
-            type: Number,
-            required: true,
-            index: true
-        },
+        packages: [
+            {
+
+                title: {
+                    type: String,
+                },
+                amount: {
+                    type: Number,
+                    required: true,
+                },
+                forPeople: {
+                    type: Number,
+                    default: 1,
+                },
+                description: {
+                    type: String,
+
+                },
+
+            }
+        ],
         dateTime: {
             startDate: {
                 type: Date,
             },
             endDate: {
                 type: Date,
-              
+
             },
             startTime: {
                 type: String,
-              
+
             },
             endTime: {
                 type: String,
             },
-           
+
         },
         status: {
             type: String,
-            enum: ['pending', 'active', 'in-active','reject','delete'],
+            enum: ['pending', 'active', 'in-active', 'reject', 'delete'],
             default: 'pending',
             index: true
         },
@@ -82,8 +98,8 @@ const eventSchema = new Schema(
             ref: "Bussiness"
         },
         hostName: {
-            type:String,
-        
+            type: String,
+
         },
         owner: {
             type: Schema.Types.ObjectId,

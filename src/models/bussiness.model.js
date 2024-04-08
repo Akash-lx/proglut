@@ -56,6 +56,20 @@ const bussinessSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: "Domain"
         }],
+
+        rules: [{
+            type: String,
+        }],
+
+        gallery: [{
+            title: {
+                type:String
+            },
+            image: {
+                type:String
+            },
+        }],
+
         bussinessHour: [
             {
                

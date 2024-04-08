@@ -16,9 +16,14 @@ import {
     getMyBussiness,
     getReviews,
     addReview,
+    addRules,
+    getGallery,
+    addGallery,
+    deleteGallery,
 } from "../controllers/bussiness.controller.js"
 import { verifyVendorJWT } from "../middlewares/auth.middleware.js"
 import { bussinessUpload } from "../middlewares/multer.middleware.js"
+import { galleryUpload } from "../middlewares/multer.middleware.js"
 
 const router = Router();
 // router.use(verifyVendorJWT); // Apply verifyJWT middleware to all routes in this file
@@ -50,8 +55,15 @@ router.route("/my").get(verifyVendorJWT, getMyBussiness);
 router.route("/aminities/")
     // .get(verifyVendorJWT, getAllActivity)
     .post(verifyVendorJWT, addAminities);
-// .delete(verifyVendorJWT, deleteActivity);
-// .patch(itemUpload.single("image"), updateActivity);
+
+router.route("/rules/")
+    // .get(verifyVendorJWT, getAllActivity)
+    .post(verifyVendorJWT, addRules);
+
+router.route("/gallery/")
+    .get(verifyVendorJWT, getGallery)
+    .patch(galleryUpload.array('images', 10),verifyVendorJWT,addGallery)
+    .delete(verifyVendorJWT,deleteGallery);
 
 router.route("/slots/")
     .get(verifyVendorJWT, getBussinessHour)
@@ -62,7 +74,7 @@ router.route("/slots/")
 router.route("/review/")
     .get(getReviews)
     .post(verifyVendorJWT, addReview);
-    
+
 
 
 export default router

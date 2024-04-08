@@ -9,7 +9,7 @@ import fs from "fs"
 
 const addEventInfo = asyncHandler(async (req, res) => {
     try {
-        const { title, city, state, street, area, pincode, latitude, longitude, fullAddress, startDate, endDate, startTime, endTime, entryFee, description, bussinessId, hostName } = req.body
+        const { title, city, state, street, area, pincode, latitude, longitude, fullAddress, startDate, endDate, startTime, endTime, description, bussinessId, hostName } = req.body
 
         if (!title) {
             throw new ApiError(400, `title is required`)
@@ -37,7 +37,6 @@ const addEventInfo = asyncHandler(async (req, res) => {
             dateTime: {
                 startDate, endDate, startTime, endTime
             },
-            entryFee,
             description,
             bussinessId,
             hostName,
@@ -91,7 +90,7 @@ const getEventById = asyncHandler(async (req, res) => {
 
 const updateEventInfo = asyncHandler(async (req, res) => {
     try {
-        const { Id, title, city, state, street, area, pincode, latitude, longitude, fullAddress, startDate, endDate, startTime, endTime, entryFee, description, bussinessId, hostName } = req.body
+        const { Id, title, city, state, street, area, pincode, latitude, longitude, fullAddress, startDate, endDate, startTime, endTime, description, bussinessId, hostName } = req.body
 
         if (!Id) {
             throw new ApiError(400, `Id is required`)
@@ -117,7 +116,6 @@ const updateEventInfo = asyncHandler(async (req, res) => {
                     dateTime: {
                         startDate, endDate, startTime, endTime
                     },
-                    entryFee,
                     description,
                     bussinessId,
                     hostName,
@@ -294,13 +292,12 @@ const getAllEvent = asyncHandler(async (req, res) => {
                     coverImages: 1,
                     title: 1,
                     address: 1,
-                    entryFee: 1,
                     dateTime: 1,
                     status: 1,
                     rating: 1,
                     reviewcount: 1,
                     bussiness: 1,
-                    owner:1,
+                    owner: 1,
                 }
             }, { $sort: { _id: -1 } },
             { $skip: parseInt(startIndex) },
@@ -380,7 +377,6 @@ const getActiveEvent = asyncHandler(async (req, res) => {
                     coverImages: 1,
                     title: 1,
                     address: 1,
-                    entryFee: 1,
                     dateTime: 1,
                     status: 1,
                     rating: 1,
@@ -460,7 +456,6 @@ const getMyEvent = asyncHandler(async (req, res) => {
                     coverImages: 1,
                     title: 1,
                     address: 1,
-                    entryFee: 1,
                     dateTime: 1,
                     status: 1,
                     rating: 1,
@@ -519,6 +514,161 @@ const addAminities = asyncHandler(async (req, res) => {
 })
 
 
+const getPackages = asyncHandler(async (req, res) => {
+    try {
+        const { eventId } = req.query
+
+        if (!eventId) {
+            throw new ApiError(400, `EventId is required`)
+        }
+
+        // const query = {}
+        // query['_id'] = new mongoose.Types.ObjectId(eventId)
+        // if (day && day != undefined) { query["slots.days"] = day };
+
+        const slotlist = await Event.findById(eventId).select("packages")
+
+        // const slotlist = await Event.aggregate([
+        //     {
+        //         $unwind: "$slots"
+        //     },
+        //     {
+        //         $match: query
+        //     },
+        //     {
+        //         $group: {
+        //             _id: "$slots",
+        //         }
+        //     }
+        // ])
+
+        const slotdata = []
+        slotlist.packages.forEach((element) => {
+            slotdata.push(element);
+        })
+
+        if (slotdata.length == 0) {
+            throw new ApiError(404, `Data Not Found ! list is empty`)
+        }
+
+
+        return res.status(201).json(
+            new ApiResponse(200, slotdata, `Packages List Fetch Successfully`)
+        )
+
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in Activity Package'))
+    }
+})
+
+
+const addPackage = asyncHandler(async (req, res) => {
+    try {
+        const { title, amount, forPeople, description, eventId } = req.body
+
+        if (!title || !eventId || !amount) {
+            throw new ApiError(400, `All fileds are required`)
+        }
+
+        const addPackage = await Event.findByIdAndUpdate(
+            eventId,
+            {
+                $push: {
+                    packages: {
+                        title,
+                        amount,
+                        forPeople,
+                        description,
+                    }
+                }
+
+            }, { new: true })
+
+        if (!addPackage) {
+            throw new ApiError(500, `Something went wrong while add package`)
+        }
+
+        return res.status(201).json(
+            new ApiResponse(200, addPackage, `Package Added Successfully`)
+        )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in add Package'))
+    }
+
+})
+
+const updatePackage = asyncHandler(async (req, res) => {
+    try {
+        const { Id, title, amount, forPeople, description, eventId } = req.body
+
+        if (!Id || !eventId || !title || !amount) {
+            throw new ApiError(400, `All fileds are required`)
+        }
+        const updatePackage = await Event.updateOne(
+            { _id: eventId, 'packages._id': { $eq: Id } },
+            {
+                $set: {
+                    "packages.$": {
+                        _id:Id,
+                        title,
+                        amount,
+                        forPeople,
+                        description
+                    }
+                }
+
+            }, { new: true })
+
+        if (!updatePackage) {
+            throw new ApiError(500, `Something went wrong while update Package`)
+        }
+
+        return res.status(201).json(
+            new ApiResponse(200, updatePackage, `Package detail Updated Successfully`)
+        )
+
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in update Pakage'))
+    }
+})
+
+const deletePackage = asyncHandler(async (req, res) => {
+    try {
+        const { Id, eventId } = req.query
+
+        if (!Id || !eventId) {
+            throw new ApiError(400, `All fileds are required`)
+        }
+        const deletePackage = await Event.updateOne(
+            { _id: eventId },
+            {
+                $pull: {
+                    packages: { _id: Id }
+                }
+
+            }, { new: true })
+
+        if (!deletePackage) {
+            throw new ApiError(500, `Something went wrong while delete Package`)
+        }
+
+        return res.status(201).json(
+            new ApiResponse(200, deletePackage, `Package Deleted Successfully`)
+        )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in delete Package'))
+    }
+
+})
+
 const deleteEvent = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     //TODO: delete video
@@ -536,4 +686,8 @@ export {
     updateEventlogo,
     getMyEvent,
     addAminities,
+    getPackages,
+    addPackage,
+    updatePackage,
+    deletePackage,
 }
