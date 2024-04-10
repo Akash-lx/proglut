@@ -66,6 +66,9 @@ const eventSchema = new Schema(
 
             }
         ],
+        rules: [{
+            type: String,
+        }],
         dateTime: {
             startDate: {
                 type: Date,

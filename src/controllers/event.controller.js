@@ -284,7 +284,7 @@ const getAllEvent = asyncHandler(async (req, res) => {
                     rating: {
                         $avg: "$reviews.rating"
                     },
-
+                    bussinessId: { $first: "$bussiness" },
                 }
             },
             {
@@ -296,7 +296,7 @@ const getAllEvent = asyncHandler(async (req, res) => {
                     status: 1,
                     rating: 1,
                     reviewcount: 1,
-                    bussiness: 1,
+                    bussinessId: 1,
                     owner: 1,
                 }
             }, { $sort: { _id: -1 } },
@@ -369,7 +369,7 @@ const getActiveEvent = asyncHandler(async (req, res) => {
                     rating: {
                         $avg: "$reviews.rating"
                     },
-
+                    bussinessId: { $first: "$bussiness" },
                 }
             },
             {
@@ -381,7 +381,7 @@ const getActiveEvent = asyncHandler(async (req, res) => {
                     status: 1,
                     rating: 1,
                     reviewcount: 1,
-                    bussiness: 1,
+                    bussinessId: 1,
                 }
             }, { $sort: { _id: -1 } },
             { $skip: parseInt(startIndex) },
@@ -448,6 +448,7 @@ const getMyEvent = asyncHandler(async (req, res) => {
                     rating: {
                         $avg: "$reviews.rating"
                     },
+                    bussinessId: { $first: "$bussiness" },
 
                 }
             },
@@ -460,7 +461,7 @@ const getMyEvent = asyncHandler(async (req, res) => {
                     status: 1,
                     rating: 1,
                     reviewcount: 1,
-                    bussiness: 1,
+                    bussinessId: 1,
                 }
             }
         ])
@@ -513,6 +514,35 @@ const addAminities = asyncHandler(async (req, res) => {
     }
 })
 
+const addRules = asyncHandler(async (req, res) => {
+    try {
+        const { rules, eventId } = req.body
+
+        if (!rules || !eventId) {
+            throw new ApiError(400, `rules and Event Id are required`)
+        }
+
+        const rulelist = await Event.findByIdAndUpdate(
+            eventId,
+            {
+                // $addToSet: { amenities: aminityId }
+                $set: { rules: rules }
+            }, { new: true })
+
+        if (!rulelist) {
+            throw new ApiError(500, `Something went wrong while adding Rules list`)
+        }
+
+        return res.status(201).json(
+            new ApiResponse(200, rulelist, `Rules Added Successfully`)
+        )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in add rules'))
+    }
+
+})
 
 const getPackages = asyncHandler(async (req, res) => {
     try {
@@ -690,4 +720,5 @@ export {
     addPackage,
     updatePackage,
     deletePackage,
+    addRules,
 }
