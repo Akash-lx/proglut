@@ -163,9 +163,16 @@ const updateCategory = asyncHandler(async (req, res) => {
      }
  
      const domainImage = await Domain.findById(domainId).select("image");
+
+     if (!domainImage) {
+      
+         throw new ApiError(400, `Invaild Id for ${type} details`)
+     }
  
      if (image !='' && image != undefined && domainImage.image && domainImage.image != '') {
-         fs.unlinkSync(`public/domainImages/${domainImage.image}`);
+        if (fs.existsSync(`public/domainImages/${domainImage.image}`)) {
+            fs.unlinkSync(`public/domainImages/${domainImage.image}`);
+          }
      }
      const domain = await Domain.findByIdAndUpdate(
          domainId,

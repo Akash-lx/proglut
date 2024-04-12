@@ -308,15 +308,25 @@ const uploadfileSetting = asyncHandler(async (req, res) => {
 
         const settingImages = await ApplicationSetting.findById(Id).select("icon logo banner");
         const setquey = {}
-
+        if (!settingImages) {
+            throw new ApiError(400, `Invaild Id for application setting details`)
+        }
+    
         if (iconFile != '' && settingImages.icon && settingImages.icon != '') {
-            fs.unlinkSync(`public/adminImages/${settingImages.icon}`);
+            if (fs.existsSync(`public/adminImages/${settingImages.icon}`)) {
+                fs.unlinkSync(`public/adminImages/${settingImages.icon}`);
+              }
+          
         }
         if (logoFile != '' && settingImages.logo && settingImages.logo != '') {
-            fs.unlinkSync(`public/adminImages/${settingImages.logo}`);
+            if (fs.existsSync(`public/adminImages/${settingImages.logo}`)) {
+                fs.unlinkSync(`public/adminImages/${settingImages.logo}`);
+              }
         }
         if (bannerFile != '' && settingImages.banner && settingImages.banner != '') {
-            fs.unlinkSync(`public/adminImages/${settingImages.banner}`);
+            if (fs.existsSync(`public/adminImages/${settingImages.banner}`)) {
+                fs.unlinkSync(`public/adminImages/${settingImages.banner}`);
+              }
         }
 
 

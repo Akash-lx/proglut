@@ -225,11 +225,17 @@ const updateBussinesslogo = asyncHandler(async (req, res) => {
         const bussinessImages = await Bussiness.findById(Id).select("brandLogo coverImage");
         const setquey = {}
 
+        if (!bussinessImages) {
+            throw new ApiError(400, "Invaild Id for Bussiness Detail")
+        }
+
         setquey['description'] = description;
         if (req.files.brandLogo) {
             //  let brandLogoFile = req.files?.brandLogo[0]?.filename;
             if (bussinessImages.brandLogo && bussinessImages.brandLogo != '') {
-                fs.unlinkSync(`public/bussinessImages/${bussinessImages.brandLogo}`);
+                if (fs.existsSync(`public/bussinessImages/${bussinessImages.brandLogo}`)) {
+                    fs.unlinkSync(`public/bussinessImages/${bussinessImages.brandLogo}`);
+                  }
             }
             setquey['brandLogo'] = req.files?.brandLogo[0]?.filename;
         }
@@ -237,7 +243,10 @@ const updateBussinesslogo = asyncHandler(async (req, res) => {
         if (req.files?.coverImage) {
             //  let brandLogoFile = req.files?.brandLogo[0]?.filename;
             if (bussinessImages.coverImage && bussinessImages.coverImage != '') {
-                fs.unlinkSync(`public/bussinessImages/${bussinessImages.coverImage}`);
+
+                if (fs.existsSync(`public/bussinessImages/${bussinessImages.coverImage}`)) {
+                    fs.unlinkSync(`public/bussinessImages/${bussinessImages.coverImage}`);
+                  }
             }
             setquey['coverImage'] = req.files?.coverImage[0]?.filename;
         }
@@ -739,7 +748,10 @@ const deleteGallery = asyncHandler(async (req, res) => {
         ])
 
         if (galleryImages && galleryImages[0]._id ) {
+            if (fs.existsSync(`public/galleryImages/${galleryImages[0]._id}`)) {
                 fs.unlinkSync(`public/galleryImages/${galleryImages[0]._id}`);
+              }
+             
           }
 
         const deleteGallery = await Bussiness.updateOne(

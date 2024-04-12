@@ -161,9 +161,17 @@ const updateEventlogo = asyncHandler(async (req, res) => {
 
         const eventImages = await Event.findById(Id).select("coverImages");
 
+        if (!eventImages) {
+
+            throw new ApiError(400, `Invaild Id for event details`)
+        }
+
+
         if (eventImages.coverImages && eventImages.coverImages.length > 0) {
             eventImages.coverImages.map((item, index) => {
-                fs.unlinkSync(`public/bussinessImages/${item}`);
+                if (fs.existsSync(`public/bussinessImages/${item}`)) {
+                    fs.unlinkSync(`public/bussinessImages/${item}`);
+                }
             })
 
         }
@@ -643,7 +651,7 @@ const updatePackage = asyncHandler(async (req, res) => {
             {
                 $set: {
                     "packages.$": {
-                        _id:Id,
+                        _id: Id,
                         title,
                         amount,
                         forPeople,

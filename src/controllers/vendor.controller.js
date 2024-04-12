@@ -441,7 +441,10 @@ const updateVendorImage = asyncHandler(async (req, res) => {
         const vendorProfile = await Vendor.findById(req.vendor?._id).select("profileImage");
 
         if (vendorProfile.profileImage && vendorProfile.profileImage != '') {
-            fs.unlinkSync(`public/vendorImages/${vendorProfile.profileImage}`);
+            if (fs.existsSync(`public/vendorImages/${vendorProfile.profileImage}`)) {
+                fs.unlinkSync(`public/vendorImages/${vendorProfile.profileImage}`);
+              }
+       
         }
         const vendor = await Vendor.findByIdAndUpdate(
             req.vendor?._id,

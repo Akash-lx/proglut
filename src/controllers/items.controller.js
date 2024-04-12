@@ -166,8 +166,18 @@ const updateItem = asyncHandler(async (req, res) => {
 
         const itemImage = await Item.findById(Id).select("image");
 
+        if (!itemImage) {
+      
+            throw new ApiError(400, `Invaild Id for ${type} details`)
+        }
+    
+
         if (image != '' && image != undefined && itemImage.image || itemImage.image != '') {
-            fs.unlinkSync(`public/itemImages/${itemImage.image}`);
+
+            if (fs.existsSync(`public/itemImages/${itemImage.image}`)) {
+                fs.unlinkSync(`public/itemImages/${itemImage.image}`);
+              }
+           
         }
 
         const item = await Item.findByIdAndUpdate(
