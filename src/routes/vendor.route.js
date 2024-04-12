@@ -14,7 +14,8 @@ import {
     getPaginateVendors,
     adminLogin,
     getVendorDetail,
-    updateVendorDetail
+    updateVendorDetail,
+    updateVendorAddress,
     // getVendorChannelProfile, 
     // getWatchHistory
 } from "../controllers/vendor.controller.js";
@@ -55,6 +56,7 @@ router.route("/user/current-user").get(verifyVendorJWT, getCurrentVendor)
 router.route("/user/update-account").patch(verifyVendorJWT, updateVendorProfile)
 router.route("/user/update-image").patch(verifyVendorJWT, userUpload.single("profileImage"), updateVendorImage)
 router.route("/user/update-status").patch(updateVendorStatus)
+router.route("/user/address").patch(verifyVendorJWT,updateVendorAddress)
 router.route("/user/all").get(getVendorsList)
 router.route("/user/detail").get(getVendorDetail).patch(updateVendorDetail)
 router.route("/user/page-user").get(getPaginateVendors)

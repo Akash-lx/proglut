@@ -385,6 +385,50 @@ const updateVendorProfile = asyncHandler(async (req, res) => {
     }
 });
 
+const updateVendorAddress = asyncHandler(async (req, res) => {
+
+    try {
+        const { city, state, street, area, pincode, latitude, longitude } = req.body
+        const usertype = req.path.split("/")[1];
+        if (!city || !state) {
+            throw new ApiError(400, "City And State are required")
+        }
+
+        const vendor = await Vendor.findByIdAndUpdate(
+            req.vendor?._id,
+            {
+                $set: {
+                    address: {
+                        city,
+                        state,
+                        street,
+                        area,
+                        pincode,
+                        latitude,
+                        longitude
+                    }
+                }
+            },
+            { new: true }
+
+        ).select("-otp -refreshToken")
+
+        if (!vendor) {
+
+            throw new ApiError(500, `Something went wrong while UpdateInfo the ${usertype}`)
+        }
+
+        return res
+            .status(200)
+            .json(new ApiResponse(200, vendor, `${usertype} details updated successfully`))
+
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in UpdateInfo'))
+    }
+});
+
 const updateVendorImage = asyncHandler(async (req, res) => {
 
     try {
@@ -676,7 +720,8 @@ export {
     getPaginateVendors,
     adminLogin,
     getVendorDetail,
-    updateVendorDetail
+    updateVendorDetail,
+    updateVendorAddress,
     // getVendorChannelProfile,
     // getWatchHistory
 }
