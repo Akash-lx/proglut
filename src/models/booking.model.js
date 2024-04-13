@@ -1,17 +1,18 @@
 import mongoose, { Schema } from "mongoose";
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
+import { nanoid } from 'nanoid';
 
 const bookingSchema = new Schema(
     {
 
         bookNo: {
-            type: Number,
+            type: String,
             required: true,
-            trim: true,
-            index: true
+            default: () => nanoid(7),
+            index: { unique: true },
         },
-       type: {
-            type: Number,
+        type: {
+            type: String,
             required: true,
             index: true
         },
@@ -19,17 +20,22 @@ const bookingSchema = new Schema(
         activityId: {
             type: Schema.Types.ObjectId,
             ref: "Activities",
-          
+
         },
         eventId: {
             type: Schema.Types.ObjectId,
             ref: "Event",
-           
+
         },
         slotId: {
             type: Schema.Types.ObjectId,
-            ref: "Slot",
-          
+            ref: "Activities.slots",
+
+        },
+        packageId: {
+            type: Schema.Types.ObjectId,
+            ref: "Event.packages",
+
         },
         addonItems: [
             {
@@ -39,7 +45,7 @@ const bookingSchema = new Schema(
                     required: true
                 },
                 type: {
-                    type: Number,
+                    type: String,
                     required: true
                 },
                 quantity: {
@@ -57,6 +63,10 @@ const bookingSchema = new Schema(
 
             },
         ],
+        price: {
+            type: Number,
+            required: true
+        },
         person: {
             type: Number,
             required: true
@@ -67,7 +77,7 @@ const bookingSchema = new Schema(
         },
         todate: {
             type: Date,
-            required: true
+           
         },
         totalPayable: {
             type: Number,
@@ -79,16 +89,16 @@ const bookingSchema = new Schema(
         },
         paidAmount: {
             type: Number,
-           
+
         },
         transactionId: {
             type: String,
-           
+
         },
         bussinessId: {
             type: Schema.Types.ObjectId,
             ref: "Bussiness",
-            required: true
+           
         },
         owner: {
             type: Schema.Types.ObjectId,
@@ -101,9 +111,7 @@ const bookingSchema = new Schema(
             default: "active",
             index: true
         },
-       
-      
-                    
+
     },
     {
         timestamps: true
