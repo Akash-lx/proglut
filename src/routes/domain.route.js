@@ -12,35 +12,35 @@ import {verifyVendorJWT} from "../middlewares/auth.middleware.js"
 import {domainUpload} from "../middlewares/multer.middleware.js"
 
 const router = Router();
-router.use(verifyVendorJWT); // Apply verifyJWT middleware to all routes in this file
+// router.use(verifyVendorJWT);
 
 router.route("/category/").get(getAllCategory)
-    .post(domainUpload.single("image"),addCategory)
-    .patch(domainUpload.single("image"), updateCategory);
+    .post(domainUpload.single("image"),verifyVendorJWT,addCategory)
+    .patch(domainUpload.single("image"),verifyVendorJWT, updateCategory);
 
 router
     .route("/category/detail")
-    .get(getCategoryById)
-    .patch(updateStatusCategory);
+    .get(verifyVendorJWT,getCategoryById)
+    .patch(verifyVendorJWT,updateStatusCategory);
     // .delete(deleteCategory)
 
 router.route("/category/active").get(getActiveCategory);
 
 router.route("/activity/").get(getAllCategory)
-    .post(domainUpload.single("image"),addCategory)
-    .patch(domainUpload.single("image"), updateCategory);
+    .post(domainUpload.single("image"),verifyVendorJWT,addCategory)
+    .patch(domainUpload.single("image"),verifyVendorJWT, updateCategory);
 
 router
     .route("/activity/detail")
     .get(getCategoryById)
-    .patch(updateStatusCategory);
+    .patch(verifyVendorJWT,updateStatusCategory);
     // .delete(deleteCategory)
 
 router.route("/activity/active").get(getActiveCategory);
 
 router.route("/aminities/").get(getAllCategory)
-    .post(domainUpload.single("image"),addCategory)
-    .patch(domainUpload.single("image"), updateCategory);
+    .post(domainUpload.single("image"),verifyVendorJWT,addCategory)
+    .patch(domainUpload.single("image"),verifyVendorJWT, updateCategory);
 
 router
     .route("/aminities/detail")
