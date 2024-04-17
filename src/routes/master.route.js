@@ -9,27 +9,57 @@ import {
     getActiveMaster,
     updateApplicationSetting,
     uploadfileSetting,
-    getApplicationSetting
+    getApplicationSetting,
+    addImageMaster,
+updateImageMaster,
 } from "../controllers/master.controller.js"
 import { verifyVendorJWT } from "../middlewares/auth.middleware.js"
 import { adminUpload } from '../middlewares/multer.middleware.js';
+import { domainUpload } from '../middlewares/multer.middleware.js';
 
 const router = Router();
-// router.use(verifyJWT); // Apply verifyJWT middleware to all routes in this file
+router.use(verifyVendorJWT); // Apply verifyJWT middleware to all routes in this file
 
 router.route("/unit/").get(getAllMaster)
-    .post(verifyVendorJWT, addMaster)
-    .patch(verifyVendorJWT, updateMaster);
+    .post(addMaster)
+    .patch(updateMaster);
 
 router
     .route("/unit/detail")
     .get(getMasterById)
-    .patch(verifyVendorJWT, updateStatusMaster);
+    .patch(updateStatusMaster);
 // .delete(deleteMaster)
 
 router.route("/unit/active").get(getActiveMaster);
-router.route("/application-setting").get(verifyVendorJWT, getApplicationSetting)
-    .patch(verifyVendorJWT, updateApplicationSetting);
+
+router.route("/banner/").get(getAllMaster)
+    .post(domainUpload.single("image"),addImageMaster)
+    .patch(domainUpload.single("image"),updateImageMaster);
+
+router
+    .route("/banner/detail")
+    .get(getMasterById)
+    .patch(updateStatusMaster);
+// .delete(deleteMaster)
+
+router.route("/banner/active").get(getActiveMaster);
+
+router.route("/advertise/").get(getAllMaster)
+    .post(domainUpload.single("image"),addImageMaster)
+    .patch(domainUpload.single("image"),updateImageMaster);
+
+router
+    .route("/advertise/detail")
+    .get(getMasterById)
+    .patch(updateStatusMaster);
+// .delete(deleteMaster)
+
+router.route("/advertise/active").get(getActiveMaster);
+
+
+
+router.route("/application-setting").get(getApplicationSetting)
+    .patch(updateApplicationSetting);
 router.route("/application-setting/uploads").patch(adminUpload.fields([
     {
         name: "icon",
@@ -43,7 +73,7 @@ router.route("/application-setting/uploads").patch(adminUpload.fields([
         name: "banner",
         maxCount: 1
     }
-]), verifyVendorJWT, uploadfileSetting);
+]), uploadfileSetting);
 
 
 export default router

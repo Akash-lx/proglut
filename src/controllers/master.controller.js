@@ -9,12 +9,12 @@ import fs from "fs"
 
 const getAllMaster = asyncHandler(async (req, res) => {
     try {
-        const { limit = 200, startIndex = 0,status } = req.query
+        const { limit = 200, startIndex = 0, status } = req.query
         const type = req.path.split("/")[1];
 
         const query = {}
         query["type"] = type;
-       if (status && status != undefined) { query["status"] = status }else { query["status"] = {$ne:"delete"}};
+        if (status && status != undefined) { query["status"] = status } else { query["status"] = { $ne: "delete" } };
 
         const master = await Master.find(query)
             .select("-type")
@@ -23,11 +23,11 @@ const getAllMaster = asyncHandler(async (req, res) => {
             .limit(limit)
             .exec();
 
-            if (!master) {
-                throw new ApiError(500, `Something went wrong while fetching ${type}`)
-            } else if (master.length == 0) {
-                throw new ApiError(404,  `NO Data Found ! ${type} list is empty`)
-             }
+        if (!master) {
+            throw new ApiError(500, `Something went wrong while fetching ${type}`)
+        } else if (master.length == 0) {
+            throw new ApiError(404, `NO Data Found ! ${type} list is empty`)
+        }
 
         return res
             .status(200)
@@ -53,11 +53,11 @@ const getActiveMaster = asyncHandler(async (req, res) => {
             .limit(limit)
             .exec();
 
-            if (!master) {
-                throw new ApiError(500, `Something went wrong while fetching ${type}`)
-            } else if (master.length == 0) {
-                throw new ApiError(404,  `NO Data Found ! ${type} list is empty`)
-             }
+        if (!master) {
+            throw new ApiError(500, `Something went wrong while fetching ${type}`)
+        } else if (master.length == 0) {
+            throw new ApiError(404, `NO Data Found ! ${type} list is empty`)
+        }
 
         return res
             .status(200)
@@ -224,6 +224,99 @@ const deleteMaster = asyncHandler(async (req, res) => {
     //TODO: delete video
 })
 
+const addImageMaster = asyncHandler(async (req, res) => {
+    try {
+        const { title="", description } = req.body
+        const image = req.file?.filename
+        const type = req.path.split("/")[1];
+
+        if (!image) {
+            throw new ApiError(400, `Image is required`)
+        }
+
+        const master = await Master.create({
+            title,
+            description,
+            image,
+            type: type
+        })
+
+        const createdMaster = await Master.findById(master._id)
+
+        if (!createdMaster) {
+            throw new ApiError(500, `Something went wrong while adding ${type}`)
+        }
+
+        return res.status(201).json(
+            new ApiResponse(200, createdMaster, `${type} Added Successfully`)
+        )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Master`))
+    }
+
+})
+
+const updateImageMaster = asyncHandler(async (req, res) => {
+    try {
+        const { Id, title, description } = req.body
+        const image = req.file?.filename
+        const type = req.path.split("/")[1];
+
+        if (!image) {
+            throw new ApiError(400, `Image is required`)
+        }
+
+
+        if (!Id) {
+            image != '' && image != undefined ? fs.unlinkSync(`public/domainImages/${image}`) : null;
+            throw new ApiError(400, `Id is required`)
+        }
+
+        const masterImage = await Master.findById(Id).select("image");
+
+        if (!masterImage) {
+
+            throw new ApiError(400, `Invaild Id for ${type} details`)
+        }
+
+        if (image != '' && image != undefined && masterImage.image && masterImage.image != '') {
+            if (fs.existsSync(`public/domainImages/${masterImage.image}`)) {
+                fs.unlinkSync(`public/domainImages/${masterImage.image}`);
+            }
+        }
+
+        const master = await Master.findByIdAndUpdate(
+            Id,
+            {
+                $set: {
+                    title,
+                    description,
+                    image,
+                    type
+                }
+            },
+            { new: true }
+        ).select("-type")
+
+        if (!master) {
+            throw new ApiError(500, `Something went wrong while update ${type}`)
+        }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, master, `${type} updated successfully`)
+            )
+
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Master`))
+    }
+})
+
 
 const getApplicationSetting = asyncHandler(async (req, res) => {
 
@@ -311,22 +404,22 @@ const uploadfileSetting = asyncHandler(async (req, res) => {
         if (!settingImages) {
             throw new ApiError(400, `Invaild Id for application setting details`)
         }
-    
+
         if (iconFile != '' && settingImages.icon && settingImages.icon != '') {
             if (fs.existsSync(`public/adminImages/${settingImages.icon}`)) {
                 fs.unlinkSync(`public/adminImages/${settingImages.icon}`);
-              }
-          
+            }
+
         }
         if (logoFile != '' && settingImages.logo && settingImages.logo != '') {
             if (fs.existsSync(`public/adminImages/${settingImages.logo}`)) {
                 fs.unlinkSync(`public/adminImages/${settingImages.logo}`);
-              }
+            }
         }
         if (bannerFile != '' && settingImages.banner && settingImages.banner != '') {
             if (fs.existsSync(`public/adminImages/${settingImages.banner}`)) {
                 fs.unlinkSync(`public/adminImages/${settingImages.banner}`);
-              }
+            }
         }
 
 
@@ -371,4 +464,6 @@ export {
     updateApplicationSetting,
     uploadfileSetting,
     getApplicationSetting,
+    addImageMaster,
+    updateImageMaster,
 }

@@ -6,9 +6,11 @@ const masterSchema = new Schema(
        
         title: {
             type: String,
-            required: true,
-            trim: true,
+           
             index: true
+        },
+        image: {
+            type: String,
         },
         description: {
             type: String,
@@ -18,7 +20,7 @@ const masterSchema = new Schema(
         type: {
             type: String,
             required: true,
-            enum:['unit'],
+            enum:['unit','banner','advertise'],
             default: "unit",
             index: true
         },

@@ -29,12 +29,12 @@ const bookingSchema = new Schema(
         },
         slotId: {
             type: Schema.Types.ObjectId,
-            ref: "Activities.slots",
+           
 
         },
         packageId: {
             type: Schema.Types.ObjectId,
-            ref: "Event.packages",
+          
 
         },
         addonItems: [
@@ -102,7 +102,7 @@ const bookingSchema = new Schema(
         },
         owner: {
             type: Schema.Types.ObjectId,
-            ref: "User"
+            ref: "Vendor"
         },
         status: {
             type: String,

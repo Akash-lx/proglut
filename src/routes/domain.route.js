@@ -8,11 +8,11 @@ updateStatusCategory,
 deleteCategory,
 getActiveCategory
 } from "../controllers/domain.controller.js"
-// import {verifyVendorJWT} from "../middlewares/auth.middleware.js"
+import {verifyVendorJWT} from "../middlewares/auth.middleware.js"
 import {domainUpload} from "../middlewares/multer.middleware.js"
 
 const router = Router();
-// router.use(verifyJWT); // Apply verifyJWT middleware to all routes in this file
+router.use(verifyVendorJWT); // Apply verifyJWT middleware to all routes in this file
 
 router.route("/category/").get(getAllCategory)
     .post(domainUpload.single("image"),addCategory)

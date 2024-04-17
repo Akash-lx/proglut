@@ -7,6 +7,7 @@ import {
     updateStatusBooking,
     deleteBooking,
     getMyBooking,
+    updateBookingPayment,
 
 } from "../controllers/booking.controller.js"
 import { verifyVendorJWT } from "../middlewares/auth.middleware.js"
@@ -24,11 +25,8 @@ router
     .patch(updateStatusBooking);
 // .delete(deleteBooking)
 
-router.route("/my").get(verifyVendorJWT, getMyBooking);
-
-router.route("/event/").get(getAllBooking)
-    .post(verifyVendorJWT, addBookingInfo)
-    .patch(verifyVendorJWT, updateBookingInfo);
+router
+    .route("/payment").patch(updateBookingPayment);
 
 router
     .route("/detail")
@@ -36,7 +34,19 @@ router
     .patch(updateStatusBooking);
 // .delete(deleteBooking)
 
-router.route("/my").get(verifyVendorJWT, getMyBooking);
+router.route("/business/my").get(verifyVendorJWT, getMyBooking);
+
+router.route("/event/").get(getAllBooking)
+    .post(verifyVendorJWT, addBookingInfo)
+    .patch(verifyVendorJWT, updateBookingInfo);
+
+// router
+//     .route("/detail")
+//     .get(getBookingById)
+//     .patch(updateStatusBooking);
+// .delete(deleteBooking)
+
+router.route("/event/my").get(verifyVendorJWT, getMyBooking);
 
 
 
