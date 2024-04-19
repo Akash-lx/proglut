@@ -23,11 +23,9 @@ const activitySchema = new Schema(
         },
         amount: {
             type: Number,
-            required: true,
         },
         forPeople: {
             type: Number,
-            default: 1,
         },
        
         description: {
