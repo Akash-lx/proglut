@@ -54,13 +54,82 @@ const getActiveActivity = asyncHandler(async (req, res) => {
         if (!bussinessId) {
             throw new ApiError(400, `BussinessId is required`)
         }
-        const category = await Activities.find({ bussinessId: bussinessId, status: 'active' })
-            .populate({ path: "activityId", select: "image title" })
-            .select("-type")
-            .sort("-_id")
-            .skip(startIndex)
-            .limit(limit)
-            .exec();
+
+        const category = await Activities.aggregate([
+            {
+                $match: {
+                    bussinessId: new mongoose.Types.ObjectId(bussinessId),
+                    status: 'active'
+                }
+            },
+
+            {
+                $lookup: {
+                    from: "domains",
+                    localField: "activityId",
+                    foreignField: "_id",
+                    as: "activityId",
+                    pipeline: [{
+                        $project: {
+                            title: 1,
+
+                        }
+                    }
+                    ]
+                },
+            },
+
+            {
+                $lookup: {
+                    from: "slots",
+                    localField: "_id",
+                    foreignField: "busActId",
+                    as: "slots",
+                    pipeline: [
+                        {
+                            $project: {
+                                title: 1,
+                                days: 1,
+                                fromdate: 1,
+                                todate: 1,
+                                startTime: 1,
+                                endTime: 1,
+                                rate: 1,
+                                status: 1,
+                            }
+                        }
+                    ]
+                },
+            },
+
+            {
+                $addFields: {
+
+                    activityId: { $first: "$activityId" },
+
+
+                }
+            }, {
+                $project: {
+                    activityId: 1,
+                    slots: 1,
+                    bussinessId: 1,
+                    status: 1,
+                    owner: 1,
+                    createdAt: 1,
+                }
+            },
+            { $sort: { _id: -1 } },
+            { $skip: parseInt(startIndex) },
+            { $limit: parseInt(limit) },
+        ])
+        // const category = await Activities.find({ bussinessId: bussinessId, status: 'active' })
+        //     .populate({ path: "activityId", select: "image title" })
+        //     .select("-type")
+        //     .sort("-_id")
+        //     .skip(startIndex)
+        //     .limit(limit)
+        //     .exec();
 
         if (!category) {
             throw new ApiError(500, `Something went wrong while fetching Activities list`)
@@ -199,7 +268,7 @@ const getActivitySlots = asyncHandler(async (req, res) => {
 
 const addSlot = asyncHandler(async (req, res) => {
     try {
-        const { title, days, startTime, endTime, maxseat, duration, rate,fromdate,todate, bussActivityId } = req.body
+        const { title, days, startTime, endTime, maxseat, duration, rate, fromdate, todate, bussActivityId } = req.body
 
         if (!days || !bussActivityId || !startTime || !endTime || !maxseat || !rate || !fromdate || !todate) {
             throw new ApiError(400, `All fileds are required`)
@@ -250,9 +319,9 @@ const addSlot = asyncHandler(async (req, res) => {
 
 const updateSlot = asyncHandler(async (req, res) => {
     try {
-        const { Id, title, days, startTime, endTime, maxseat, duration, rate ,fromdate,todate} = req.body
+        const { Id, title, days, startTime, endTime, maxseat, duration, rate, fromdate, todate } = req.body
 
-        if (!Id || !days  || !startTime || !endTime || !maxseat || !rate || !fromdate || !todate) {
+        if (!Id || !days || !startTime || !endTime || !maxseat || !rate || !fromdate || !todate) {
             throw new ApiError(400, `All fileds are required`)
         }
 
@@ -271,19 +340,19 @@ const updateSlot = asyncHandler(async (req, res) => {
         }
 
         const updateSlot = await Slots.findByIdAndUpdate(
-             Id ,
+            Id,
             {
                 $set: {
-                        title,
-                        days,
-                        fromdate,
-                        todate,
-                        startTime,
-                        endTime,
-                        maxseat,
-                        duration,
-                        rate,
-                  
+                    title,
+                    days,
+                    fromdate,
+                    todate,
+                    startTime,
+                    endTime,
+                    maxseat,
+                    duration,
+                    rate,
+
                 }
 
             }, { new: true })

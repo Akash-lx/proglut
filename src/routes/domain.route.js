@@ -8,39 +8,39 @@ updateStatusCategory,
 deleteCategory,
 getActiveCategory
 } from "../controllers/domain.controller.js"
-import {verifyVendorJWT} from "../middlewares/auth.middleware.js"
+// import {verifyVendorJWT} from "../middlewares/auth.middleware.js"
 import {domainUpload} from "../middlewares/multer.middleware.js"
 
 const router = Router();
 // router.use(verifyVendorJWT);
 
 router.route("/category/").get(getAllCategory)
-    .post(domainUpload.single("image"),verifyVendorJWT,addCategory)
-    .patch(domainUpload.single("image"),verifyVendorJWT, updateCategory);
+    .post(domainUpload.single("image"),addCategory)
+    .patch(domainUpload.single("image"), updateCategory);
 
 router
     .route("/category/detail")
-    .get(verifyVendorJWT,getCategoryById)
-    .patch(verifyVendorJWT,updateStatusCategory);
+    .get(getCategoryById)
+    .patch(updateStatusCategory);
     // .delete(deleteCategory)
 
 router.route("/category/active").get(getActiveCategory);
 
 router.route("/activity/").get(getAllCategory)
-    .post(domainUpload.single("image"),verifyVendorJWT,addCategory)
-    .patch(domainUpload.single("image"),verifyVendorJWT, updateCategory);
+    .post(domainUpload.single("image"),addCategory)
+    .patch(domainUpload.single("image"), updateCategory);
 
 router
     .route("/activity/detail")
     .get(getCategoryById)
-    .patch(verifyVendorJWT,updateStatusCategory);
+    .patch(updateStatusCategory);
     // .delete(deleteCategory)
 
 router.route("/activity/active").get(getActiveCategory);
 
 router.route("/aminities/").get(getAllCategory)
-    .post(domainUpload.single("image"),verifyVendorJWT,addCategory)
-    .patch(domainUpload.single("image"),verifyVendorJWT, updateCategory);
+    .post(domainUpload.single("image"),addCategory)
+    .patch(domainUpload.single("image"), updateCategory);
 
 router
     .route("/aminities/detail")
