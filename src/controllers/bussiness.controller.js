@@ -235,7 +235,7 @@ const updateBussinesslogo = asyncHandler(async (req, res) => {
             if (bussinessImages.brandLogo && bussinessImages.brandLogo != '') {
                 if (fs.existsSync(`public/bussinessImages/${bussinessImages.brandLogo}`)) {
                     fs.unlinkSync(`public/bussinessImages/${bussinessImages.brandLogo}`);
-                  }
+                }
             }
             setquey['brandLogo'] = req.files?.brandLogo[0]?.filename;
         }
@@ -246,7 +246,7 @@ const updateBussinesslogo = asyncHandler(async (req, res) => {
 
                 if (fs.existsSync(`public/bussinessImages/${bussinessImages.coverImage}`)) {
                     fs.unlinkSync(`public/bussinessImages/${bussinessImages.coverImage}`);
-                  }
+                }
             }
             setquey['coverImage'] = req.files?.coverImage[0]?.filename;
         }
@@ -635,25 +635,7 @@ const getGallery = asyncHandler(async (req, res) => {
             throw new ApiError(400, `BussinessId is required`)
         }
 
-        // const query = {}
-        // query['_id'] = new mongoose.Types.ObjectId(bussinessId)
-        // if (day && day != undefined) { query["slots.days"] = day };
-
         const gallerylist = await Bussiness.findById(bussinessId).select("gallery")
-
-        // const gallerylist = await Bussiness.aggregate([
-        //     {
-        //         $unwind: "$gallerys"
-        //     },
-        //     {
-        //         $match: query
-        //     },
-        //     {
-        //         $group: {
-        //             _id: "$gallerys",
-        //         }
-        //     }
-        // ])
 
         const gallerydata = []
         gallerylist.gallery.forEach((element) => {
@@ -689,7 +671,7 @@ const addGallery = asyncHandler(async (req, res) => {
         req.files.map((item, index) => {
             // console.log(item.filename);
             const galey = {};
-           if(title && title[index]){ galey['title'] = title[index];}
+            if (title && title[index]) { galey['title'] = title[index]; }
             galey['image'] = item.filename;
             imagearr.push(galey);
         });
@@ -730,13 +712,14 @@ const deleteGallery = asyncHandler(async (req, res) => {
             throw new ApiError(400, `BussinessId and Id are required`)
         }
 
-      
+
         const galleryImages = await Bussiness.aggregate([
             {
                 $unwind: "$gallery"
             },
             {
-                $match: {_id : new mongoose.Types.ObjectId(bussinessId),
+                $match: {
+                    _id: new mongoose.Types.ObjectId(bussinessId),
                     "gallery._id": new mongoose.Types.ObjectId(Id)
                 }
             },
@@ -747,12 +730,12 @@ const deleteGallery = asyncHandler(async (req, res) => {
             }
         ])
 
-        if (galleryImages && galleryImages[0]._id ) {
+        if (galleryImages && galleryImages[0]._id) {
             if (fs.existsSync(`public/galleryImages/${galleryImages[0]._id}`)) {
                 fs.unlinkSync(`public/galleryImages/${galleryImages[0]._id}`);
-              }
-             
-          }
+            }
+
+        }
 
         const deleteGallery = await Bussiness.updateOne(
             { _id: bussinessId },

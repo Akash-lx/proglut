@@ -44,28 +44,7 @@ const eventSchema = new Schema(
                 type: String,
             }
         },
-
-        packages: [
-            {
-
-                title: {
-                    type: String,
-                },
-                amount: {
-                    type: Number,
-                    required: true,
-                },
-                forPeople: {
-                    type: Number,
-                    default: 1,
-                },
-                description: {
-                    type: String,
-
-                },
-
-            }
-        ],
+       
         rules: [{
             type: String,
         }],

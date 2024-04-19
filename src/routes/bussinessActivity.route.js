@@ -8,7 +8,7 @@ import {
     getActivitySlots,
     addSlot,
     updateSlot,
-    deleteSlot,
+    updateSlotStatus,
 
 } from "../controllers/bussinessActivity.controller.js"
 import { verifyVendorJWT } from "../middlewares/auth.middleware.js"
@@ -27,7 +27,7 @@ router.route("/bussinessActivity/active").get(verifyVendorJWT, getActiveActivity
 router.route("/bussinessActivity/slots").get(getActivitySlots)
     .post(verifyVendorJWT, addSlot)
     .patch(verifyVendorJWT, updateSlot)
-    .delete(verifyVendorJWT, deleteSlot);
+    .delete(verifyVendorJWT, updateSlotStatus);
 
 
 

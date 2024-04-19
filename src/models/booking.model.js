@@ -17,24 +17,24 @@ const bookingSchema = new Schema(
             index: true
         },
 
-        activityId: {
+        activityId: [{
             type: Schema.Types.ObjectId,
             ref: "Activities",
 
-        },
+        }],
         eventId: {
             type: Schema.Types.ObjectId,
             ref: "Event",
 
         },
-        slotId: {
+        slotId: [{
             type: Schema.Types.ObjectId,
-           
+            ref: "Slots",
 
-        },
+        }],
         packageId: {
             type: Schema.Types.ObjectId,
-          
+            ref: "Activities",
 
         },
         addonItems: [

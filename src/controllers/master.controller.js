@@ -81,6 +81,7 @@ const addMaster = asyncHandler(async (req, res) => {
         }
 
         const existedMaster = await Master.findOne({
+            status: { $ne: "delete" },
             type: type,
             title: title
         })
@@ -146,6 +147,7 @@ const updateMaster = asyncHandler(async (req, res) => {
 
 
         const existedMaster = await Master.findOne({
+            status: { $ne: "delete" },
             _id: { $ne: Id },
             type: type,
             title: title

@@ -1,6 +1,6 @@
 import mongoose, { isValidObjectId } from "mongoose"
 import { Event } from "../models/event.model.js"
-// import {User} from "../models/user.model.js"
+import { Activities } from "../models/activities.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
@@ -20,6 +20,7 @@ const addEventInfo = asyncHandler(async (req, res) => {
         }
 
         const existedEvent = await Event.findOne({
+            status: { $ne: "delete" },
             title: title,
             "dateTime.startDate": startDate,
             owner: req.vendor._id,
@@ -560,38 +561,16 @@ const getPackages = asyncHandler(async (req, res) => {
             throw new ApiError(400, `EventId is required`)
         }
 
-        // const query = {}
-        // query['_id'] = new mongoose.Types.ObjectId(eventId)
-        // if (day && day != undefined) { query["slots.days"] = day };
+        const slotlist = await Activities.find({eventId})
 
-        const slotlist = await Event.findById(eventId).select("packages")
 
-        // const slotlist = await Event.aggregate([
-        //     {
-        //         $unwind: "$slots"
-        //     },
-        //     {
-        //         $match: query
-        //     },
-        //     {
-        //         $group: {
-        //             _id: "$slots",
-        //         }
-        //     }
-        // ])
-
-        const slotdata = []
-        slotlist.packages.forEach((element) => {
-            slotdata.push(element);
-        })
-
-        if (slotdata.length == 0) {
+        if (slotlist.length == 0) {
             throw new ApiError(404, `Data Not Found ! list is empty`)
         }
 
 
         return res.status(201).json(
-            new ApiResponse(200, slotdata, `Packages List Fetch Successfully`)
+            new ApiResponse(200, slotlist, `Packages List Fetch Successfully`)
         )
 
     } catch (error) {
@@ -610,19 +589,27 @@ const addPackage = asyncHandler(async (req, res) => {
             throw new ApiError(400, `All fileds are required`)
         }
 
-        const addPackage = await Event.findByIdAndUpdate(
-            eventId,
-            {
-                $push: {
-                    packages: {
-                        title,
-                        amount,
-                        forPeople,
-                        description,
-                    }
-                }
+        const existedDomain = await Activities.findOne({
+            status: { $ne: "delete" },
+            title: title,
+            amount: amount,
+            forPeople: forPeople,
+            eventId: eventId,
+        })
 
-            }, { new: true })
+        if (existedDomain) {
+            throw new ApiError(409, `Package with same title , Amount,forpeople and event already exists`)
+        }
+
+        const addPackage = await Activities.create(
+            {
+                title,
+                amount,
+                forPeople,
+                description,
+                eventId,
+                owner: req.vendor._id
+            })
 
         if (!addPackage) {
             throw new ApiError(500, `Something went wrong while add package`)
@@ -641,24 +628,37 @@ const addPackage = asyncHandler(async (req, res) => {
 
 const updatePackage = asyncHandler(async (req, res) => {
     try {
-        const { Id, title, amount, forPeople, description, eventId } = req.body
+        const { Id, title, amount, forPeople, description,eventId} = req.body
 
-        if (!Id || !eventId || !title || !amount) {
+        if (!Id || !title || !amount || !eventId) {
             throw new ApiError(400, `All fileds are required`)
         }
-        const updatePackage = await Event.updateOne(
-            { _id: eventId, 'packages._id': { $eq: Id } },
+
+        const existedDomain = await Activities.findOne({
+            _id: { $ne: Id },
+            status: { $ne: "delete" },
+            title: title,
+            amount: amount,
+            forPeople: forPeople,
+            eventId: eventId,
+        })
+
+        if (existedDomain) {
+            throw new ApiError(409, `Package with same title , Amount,forpeople and event already exists`)
+        }
+
+
+        const updatePackage = await Activities.findByIdAndUpdate(
+            Id,
             {
                 $set: {
-                    "packages.$": {
-                        _id: Id,
-                        title,
-                        amount,
-                        forPeople,
-                        description
-                    }
-                }
 
+                    title,
+                    amount,
+                    forPeople,
+                    description
+
+                }
             }, { new: true })
 
         if (!updatePackage) {
@@ -676,18 +676,18 @@ const updatePackage = asyncHandler(async (req, res) => {
     }
 })
 
-const deletePackage = asyncHandler(async (req, res) => {
+const updatePackageStatus = asyncHandler(async (req, res) => {
     try {
-        const { Id, eventId } = req.query
+        const { Id, status } = req.query
 
-        if (!Id || !eventId) {
+        if (!Id || !status) {
             throw new ApiError(400, `All fileds are required`)
         }
-        const deletePackage = await Event.updateOne(
-            { _id: eventId },
+        const deletePackage = await Activities.findByIdAndUpdate(
+           Id,
             {
-                $pull: {
-                    packages: { _id: Id }
+                $set: {
+                   status
                 }
 
             }, { new: true })
@@ -697,7 +697,7 @@ const deletePackage = asyncHandler(async (req, res) => {
         }
 
         return res.status(201).json(
-            new ApiResponse(200, deletePackage, `Package Deleted Successfully`)
+            new ApiResponse(200, deletePackage, `Package Status Updated Successfully`)
         )
     } catch (error) {
         return res
@@ -727,6 +727,6 @@ export {
     getPackages,
     addPackage,
     updatePackage,
-    deletePackage,
+    updatePackageStatus,
     addRules,
 }

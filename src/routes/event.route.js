@@ -13,7 +13,7 @@ import {
     getPackages,
     addPackage,
     updatePackage,
-    deletePackage,
+    updatePackageStatus,
     addRules,
 } from "../controllers/event.controller.js"
 import { verifyVendorJWT } from "../middlewares/auth.middleware.js"
@@ -45,6 +45,6 @@ router
     .get(getPackages)
     .post(verifyVendorJWT,addPackage)
     .patch(verifyVendorJWT,updatePackage)
-    .delete(verifyVendorJWT,deletePackage);
+    .delete(verifyVendorJWT,updatePackageStatus);
 
 export default router

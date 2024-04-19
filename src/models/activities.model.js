@@ -12,43 +12,27 @@ const activitySchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: "Bussiness"
         },
-        slots: [ {
-               
-            title: {
-                type: String,
 
-            },
-            days: [],
-            startTime: {
-                type: String,
-                required: true,
-            },
-            endTime: {
-                type: String,
-                required: true,
-            },
-            maxseat: {
-                type: String,
-                required: true,
-            },
-            duration: {
-                type: String,
-              
-            },
-            rate: {
-                type: String,
-                required: true,
-            },
+        eventId: {
+            type: Schema.Types.ObjectId,
+            ref: "Event"
+        },
 
-        }],
-        // foods: [{
-        //     type: Schema.Types.ObjectId,
-        //     ref: "Item"
-        // }],
-        // seat: {
-        //     type: Number,
-        //     required: true
-        // },
+        title: {
+            type: String,
+        },
+        amount: {
+            type: Number,
+            required: true,
+        },
+        forPeople: {
+            type: Number,
+            default: 1,
+        },
+       
+        description: {
+            type: String,
+        },
        
         status: {
             type: String,

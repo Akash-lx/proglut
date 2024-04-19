@@ -86,6 +86,7 @@ const addCategory = asyncHandler(async (req, res) => {
         }
 
         const existedDomain = await Domain.findOne({
+            status: { $ne: "delete" },
             type: type,
             title: title
         })
@@ -153,6 +154,7 @@ const updateCategory = asyncHandler(async (req, res) => {
  
      const existedDomain = await Domain.findOne({
          _id: { $ne: domainId },
+         status: { $ne: "delete" },
          type: type,
          title: title
      })

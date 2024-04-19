@@ -1,5 +1,6 @@
 import mongoose, { isValidObjectId } from "mongoose"
 import { Activities } from "../models/activities.model.js"
+import { Slots } from "../models/slots.model.js"
 // import { Bussiness } from "../models/bussiness.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
@@ -88,7 +89,7 @@ const addActivity = asyncHandler(async (req, res) => {
             throw new ApiError(400, `ActivityId BussinessId are required`)
         }
         const itemsmap = [];
-         await activityId.map(async (x) => {
+        await activityId.map(async (x) => {
 
             let obj = {};
             obj["activityId"] = x;
@@ -174,35 +175,18 @@ const getActivitySlots = asyncHandler(async (req, res) => {
         }
 
         const query = {}
-        query['_id'] = new mongoose.Types.ObjectId(bussActivityId)
-        if (day && day != undefined) { query["slots.days"] = day };
+        query['busActId'] = new mongoose.Types.ObjectId(bussActivityId)
+        if (day && day != undefined) { query["days"] = day };
 
-        const slotlist = await Activities.aggregate([
-            {
-                $unwind: "$slots"
-            },
-            {
-                $match: query
-            },
-            {
-                $group: {
-                    _id: "$slots",
-                }
-            }
-        ])
+        const slotlist = await Slots.find(query)
 
-        const slotdata = []
-        slotlist.forEach((element) => {
-            slotdata.push(element._id);
-        })
-
-        if (slotdata.length == 0) {
+        if (slotlist.length == 0) {
             throw new ApiError(404, `Data Not Found ! list is empty`)
         }
 
 
         return res.status(201).json(
-            new ApiResponse(200, slotdata, `Slots List Fetch Successfully`)
+            new ApiResponse(200, slotlist, `Slots List Fetch Successfully`)
         )
 
     } catch (error) {
@@ -215,28 +199,39 @@ const getActivitySlots = asyncHandler(async (req, res) => {
 
 const addSlot = asyncHandler(async (req, res) => {
     try {
-        const { title, days, startTime, endTime, maxseat, duration, rate, bussActivityId } = req.body
+        const { title, days, startTime, endTime, maxseat, duration, rate,fromdate,todate, bussActivityId } = req.body
 
-        if (!days || !bussActivityId || !startTime || !endTime || !maxseat || !rate) {
+        if (!days || !bussActivityId || !startTime || !endTime || !maxseat || !rate || !fromdate || !todate) {
             throw new ApiError(400, `All fileds are required`)
         }
 
-        const addSlot = await Activities.findByIdAndUpdate(
-            bussActivityId,
-            {
-                $push: {
-                    slots: {
-                        title,
-                        days,
-                        startTime,
-                        endTime,
-                        maxseat,
-                        duration,
-                        rate,
-                    }
-                }
+        const existedDomain = await Activities.findOne({
+            status: { $ne: "delete" },
+            days,
+            startTime,
+            endTime,
+            fromdate,
+            todate,
+        })
 
-            }, { new: true })
+        if (existedDomain) {
+            throw new ApiError(409, `Package with same title , Amount,forpeople and event already exists`)
+        }
+
+        const addSlot = await Slots.create(
+            {
+                title,
+                days,
+                fromdate,
+                todate,
+                startTime,
+                endTime,
+                maxseat,
+                duration,
+                rate,
+                busActId: bussActivityId,
+                owner: req.vendor._id,
+            })
 
         if (!addSlot) {
             throw new ApiError(500, `Something went wrong while add slot`)
@@ -255,25 +250,40 @@ const addSlot = asyncHandler(async (req, res) => {
 
 const updateSlot = asyncHandler(async (req, res) => {
     try {
-        const { Id, title, days, startTime, endTime, maxseat, duration, rate, bussActivityId } = req.body
+        const { Id, title, days, startTime, endTime, maxseat, duration, rate ,fromdate,todate} = req.body
 
-        if (!Id || !days || !bussActivityId || !startTime || !endTime || !maxseat || !rate) {
+        if (!Id || !days  || !startTime || !endTime || !maxseat || !rate || !fromdate || !todate) {
             throw new ApiError(400, `All fileds are required`)
         }
-        const updateSlot = await Activities.updateOne(
-            { _id: bussActivityId, 'slots._id': { $eq: Id } },
+
+        const existedDomain = await Activities.findOne({
+            _id: { $ne: Id },
+            status: { $ne: "delete" },
+            days,
+            startTime,
+            endTime,
+            fromdate,
+            todate,
+        })
+
+        if (existedDomain) {
+            throw new ApiError(409, `Package with same title , Amount,forpeople and event already exists`)
+        }
+
+        const updateSlot = await Slots.findByIdAndUpdate(
+             Id ,
             {
                 $set: {
-                    "slots.$": {
-                        _id:Id,
                         title,
                         days,
+                        fromdate,
+                        todate,
                         startTime,
                         endTime,
                         maxseat,
                         duration,
                         rate,
-                    }
+                  
                 }
 
             }, { new: true })
@@ -293,18 +303,18 @@ const updateSlot = asyncHandler(async (req, res) => {
     }
 })
 
-const deleteSlot = asyncHandler(async (req, res) => {
+const updateSlotStatus = asyncHandler(async (req, res) => {
     try {
-        const { Id, bussActivityId } = req.query
+        const { Id, status } = req.query
 
-        if (!Id || !bussActivityId) {
+        if (!Id || !status) {
             throw new ApiError(400, `All fileds are required`)
         }
-        const deleteSlot = await Activities.updateOne(
-            { _id: bussActivityId },
+        const deleteSlot = await Slots.findByIdAndUpdate(
+            Id,
             {
-                $pull: {
-                    slots: { _id: Id }
+                $set: {
+                    status
                 }
 
             }, { new: true })
@@ -314,7 +324,7 @@ const deleteSlot = asyncHandler(async (req, res) => {
         }
 
         return res.status(201).json(
-            new ApiResponse(200, deleteSlot, `Slot Deleted Successfully`)
+            new ApiResponse(200, deleteSlot, `Slot Status Updated Successfully`)
         )
     } catch (error) {
         return res
@@ -333,6 +343,6 @@ export {
     getActivitySlots,
     addSlot,
     updateSlot,
-    deleteSlot,
+    updateSlotStatus,
 
 }

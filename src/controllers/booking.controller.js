@@ -60,6 +60,7 @@ const getBookingById = asyncHandler(async (req, res) => {
 
     try {
         const { Id } = req.query
+
         const booking = await Booking.aggregate([
             {
                 $match: {
@@ -68,87 +69,160 @@ const getBookingById = asyncHandler(async (req, res) => {
             },
             {
                 $lookup: {
-                    from: "reviews",
-                    localField: "_id",
-                    foreignField: "bookingId",
-                    as: "reviews"
-                }
-            }
-            , {
-                $lookup: {
-                    from: "domains",
-                    localField: "amenities",
-                    foreignField: "_id",
-                    as: "amenities_list",
-                    pipeline: [{
-                        $project: {
-                            title: 1,
-                            image: 1,
-                            description: 1,
-                        }
-                    }
-                    ]
-                }
-            },
-            {
-                $lookup: {
                     from: "vendors",
                     localField: "owner",
                     foreignField: "_id",
-                    as: "owner",
+                    as: "customer",
                     pipeline: [{
                         $project: {
                             fullName: 1,
                             profileImage: 1,
                             usertype: 1,
                             status: 1,
+
                         }
                     }
                     ]
                 }
-            },
-            {
+            }, {
                 $lookup: {
-                    from: "domains",
-                    localField: "domain",
+                    from: "bussinesses",
+                    localField: "bussinessId",
                     foreignField: "_id",
-                    as: "domain",
+                    as: "business",
                     pipeline: [{
                         $project: {
                             title: 1,
-
+                            brandLogo: 1,
+                            address:1,
+                            rules:1,
                         }
                     }
                     ]
                 },
             },
             {
-                $addFields: {
-                    reviewcount: {
-                        $size: "$reviews"
-                    },
-                    rating: {
-                        $avg: "$reviews.rating"
-                    },
+                $lookup: {
+                    from: "events",
+                    localField: "eventId",
+                    foreignField: "_id",
+                    as: "event",
+                    pipeline: [{
+                        $project: {
+                            title: 1,
+                            address:1,
+                            hostName: 1,
+                            dateTime: 1,
+                            rules:1,
+                        }
+                    }
+                    ]
+                },
+            },
+            {
+                $lookup: {
+                    from: "activities",
+                    localField: "activityId",
+                    foreignField: "_id",
+                    as: "activity",
+                    pipeline: [
+                        {
+                            $lookup: {
+                                from: "domains",
+                                localField: "activityId",
+                                foreignField: "_id",
+                                as: "domain",
+                                pipeline: [{
+                                    $project: {
+                                        title: 1,
 
+                                    }
+                                }
+                                ]
+                            },
+                        }, {
+                            $project: {
+                                domain: { $first: "$domain" },
+                            }
+                        }
+                    ]
+                },
+            },
+            {
+                $lookup: {
+                    from: "slots",
+                    localField: "slotId",
+                    foreignField: "_id",
+                    as: "slots",
+                    pipeline: [
+                        {
+                            $project: {
+                                title: 1,
+                                days: 1,
+                                fromdate: 1,
+                                todate: 1,
+                                startTime: 1,
+                                endTime: 1,
+                                rate: 1,
+                                status: 1,
+                            }
+                        }
+                    ]
+                },
+            },
+            {
+                $lookup: {
+                    from: "activities",
+                    localField: "packageId",
+                    foreignField: "_id",
+                    as: "packages",
+                    pipeline: [
+                        {
+                            $project: {
+                                title: 1,
+                                days: 1,
+                                fromdate: 1,
+                                todate: 1,
+                                startTime: 1,
+                                endTime: 1,
+                                rate: 1,
+                                status: 1,
+                            }
+                        }
+                    ]
+                },
+            },
+
+            {
+                $addFields: {
+                    businessId: { $first: "$business" },
+                    eventId: { $first: "$event" },
+                    customerId: { $first: "$customer" },
+                    activityId: "$activity.domain",
+                    packagesId: { $first: "$packages" },
 
                 }
             },
             {
                 $project: {
-                    coverImage: 1,
-                    brandLogo: 1,
-                    title: 1,
-                    rating: 1,
-                    reviewcount: 1,
+                    bookNo: 1,
+                    type: 1,
+                    person: 1,
+                    fromdate: 1,
+                    todate: 1,
+                    totalPayable: 1,
+                    isPaid: 1,
+                    paidAmount: 1,
                     status: 1,
-                    domain: 1,
-                    description: 1,
-                    address: 1,
-                    rules: 1,
-                    bookingHour: 1,
-                    amenities_list: 1,
-                    owner: 1,
+                    addonItems:1,
+                    transactionId:1,
+                    businessId: 1,
+                    eventId: 1,
+                    activityId: 1,
+                    slots: 1,
+                    customerId: 1,
+                    createdAt: 1,
+                    packagesId: 1,
                 }
             }
         ])
@@ -383,54 +457,58 @@ const getAllBooking = asyncHandler(async (req, res) => {
                     ]
                 },
             },
-            //    { $lookup: {
-            //         from: "activities",
-            //         let: { activities: "$slotId" },
-            //         pipeline: [
-            //           {
-            //             $match: { $expr: { $in: ["$$activities", "$slots._id"] } }
-            //           },
-            //           {
-            //             $project: {
-            //               _id: 0,
-            //               activities: {
-            //                 $first: {
-            //                   $filter: {
-            //                     input: "$activities",
-            //                     cond: { $eq: ["$$activities", "$$this._id"] }
-            //                   }
-            //                 }
-            //               }
-            //             }
-            //           }
-            //         ],
-            //         as: "activities"
-            //       }
-            //     },
-            // {
-            //     $lookup: {
-            //         from: "activities",
-            //         localField: "slotId",
-            //         foreignField: "slots._id",
-            //         as: "slots",
-            //         pipeline: [{
-            //             $project: {
-            //                 title: 1,
-            //                 startTime: 1,
-            //                 endTime: 1,
-            //                 duration: 1,
-            //                 rate: 1
-            //             }
-            //         }
-            //         ]
-            //     },
-            // },
+            {
+                $lookup: {
+                    from: "slots",
+                    localField: "slotId",
+                    foreignField: "_id",
+                    as: "slots",
+                    pipeline: [
+                        {
+                            $project: {
+                                title: 1,
+                                days: 1,
+                                fromdate: 1,
+                                todate: 1,
+                                startTime: 1,
+                                endTime: 1,
+                                rate: 1,
+                                status: 1,
+                            }
+                        }
+                    ]
+                },
+            },
+            {
+                $lookup: {
+                    from: "activities",
+                    localField: "packageId",
+                    foreignField: "_id",
+                    as: "packages",
+                    pipeline: [
+                        {
+                            $project: {
+                                title: 1,
+                                days: 1,
+                                fromdate: 1,
+                                todate: 1,
+                                startTime: 1,
+                                endTime: 1,
+                                rate: 1,
+                                status: 1,
+                            }
+                        }
+                    ]
+                },
+            },
+
             {
                 $addFields: {
                     businessId: { $first: "$business" },
                     eventId: { $first: "$event" },
                     customerId: { $first: "$customer" },
-                    activityId: { $first: "$activity.domain" },
+                    activityId: "$activity.domain",
+                    packagesId: { $first: "$packages" },
 
                 }
             },
@@ -448,8 +526,10 @@ const getAllBooking = asyncHandler(async (req, res) => {
                     businessId: 1,
                     eventId: 1,
                     activityId: 1,
-                    // slots: 1,
+                    slots: 1,
                     customerId: 1,
+                    createdAt: 1,
+                    packagesId: 1,
                 }
             }, { $sort: { _id: -1 } },
             { $skip: parseInt(startIndex) },
@@ -556,12 +636,58 @@ const getMyBooking = asyncHandler(async (req, res) => {
                 ]
             },
         },
+        {
+            $lookup: {
+                from: "slots",
+                localField: "slotId",
+                foreignField: "_id",
+                as: "slots",
+                pipeline: [
+                    {
+                        $project: {
+                            title: 1,
+                            days: 1,
+                            fromdate: 1,
+                            todate: 1,
+                            startTime: 1,
+                            endTime: 1,
+                            rate: 1,
+                            status: 1,
+                        }
+                    }
+                ]
+            },
+        },
+        {
+            $lookup: {
+                from: "activities",
+                localField: "packageId",
+                foreignField: "_id",
+                as: "packages",
+                pipeline: [
+                    {
+                        $project: {
+                            title: 1,
+                            days: 1,
+                            fromdate: 1,
+                            todate: 1,
+                            startTime: 1,
+                            endTime: 1,
+                            rate: 1,
+                            status: 1,
+                        }
+                    }
+                ]
+            },
+        },
 
         {
             $addFields: {
                 businessId: { $first: "$business" },
                 eventId: { $first: "$event" },
-                activityId: { $first: "$activity.domain" },
+                customerId: { $first: "$customer" },
+                activityId: "$activity.domain",
+                packagesId: { $first: "$packages" },
 
             }
         },
@@ -579,6 +705,10 @@ const getMyBooking = asyncHandler(async (req, res) => {
                 businessId: 1,
                 eventId: 1,
                 activityId: 1,
+                slots: 1,
+                customerId: 1,
+                createdAt: 1,
+                packagesId: 1,
             }
         }, { $sort: { _id: -1 } },
         { $skip: parseInt(startIndex) },
