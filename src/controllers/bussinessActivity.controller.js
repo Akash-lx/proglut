@@ -72,7 +72,7 @@ const getActiveActivity = asyncHandler(async (req, res) => {
                     pipeline: [{
                         $project: {
                             title: 1,
-
+                            image: 1,
                         }
                     }
                     ]
@@ -114,6 +114,7 @@ const getActiveActivity = asyncHandler(async (req, res) => {
                     activityId: 1,
                     slots: 1,
                     bussinessId: 1,
+                    description:1,
                     status: 1,
                     owner: 1,
                     createdAt: 1,
@@ -209,6 +210,34 @@ const getActivityById = asyncHandler(async (req, res) => {
             .status(error.statusCode || 500)
             .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in Activities'))
     }
+})
+
+const updateDescBussActivity = asyncHandler(async (req, res) => {
+    try {
+        const { bussActivityId,description } = req.body
+
+        if (!bussActivityId) {
+            throw new ApiError(400, `Bussiness Activity is required`)
+        }
+        const updateDesc = await Activities.findByIdAndUpdate(bussActivityId,{
+            $set :{
+                description
+            },
+        },  { new: true })
+
+        if (!updateDesc) {
+            throw new ApiError(500, `Something went wrong while update Business Activity`)
+        }
+
+        return res.status(201).json(
+            new ApiResponse(200, updateDesc, `Business Activity Updated Successfully`)
+        )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in update Business Activity'))
+    }
+
 })
 
 const deleteBussinessActivity = asyncHandler(async (req, res) => {
@@ -408,6 +437,7 @@ export {
     getActiveActivity,
     addActivity,
     getActivityById,
+    updateDescBussActivity,
     deleteBussinessActivity,
     getActivitySlots,
     addSlot,

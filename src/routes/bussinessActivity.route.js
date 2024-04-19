@@ -3,6 +3,7 @@ import {
     getAllActivity,
     addActivity,
     getActivityById,
+    updateDescBussActivity,
     deleteBussinessActivity,
     getActiveActivity,
     getActivitySlots,
@@ -19,6 +20,7 @@ const router = Router();
 
 router.route("/bussinessActivity/").get(verifyVendorJWT, getAllActivity)
     .post(verifyVendorJWT, addActivity)
+    .patch(verifyVendorJWT, updateDescBussActivity)
     .delete(verifyVendorJWT, deleteBussinessActivity);
 
 router.route("/bussinessActivity/detail").get(getActivityById)
