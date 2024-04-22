@@ -26,6 +26,7 @@ import itemRouter from './routes/items.route.js'
 import bussinessActivityRouter from './routes/bussinessActivity.route.js'
 import masterRoute from './routes/master.route.js'
 import bookingRoute from './routes/booking.route.js'
+import reportRoute from './routes/report.route.js'
 
 
 //routes declaration
@@ -42,5 +43,6 @@ app.use("/api/v1/booking", bookingRoute)
 app.use("/api/v1", itemRouter)
 app.use("/api/v1", bussinessActivityRouter)
 app.use("/api/v1/master", masterRoute)
+app.use("/api/v1/report", reportRoute)
 
 export { app }

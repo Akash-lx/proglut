@@ -340,17 +340,25 @@ const updateStatusBussiness = asyncHandler(async (req, res) => {
 
 const getAllBussiness = asyncHandler(async (req, res) => {
     try {
-        const { limit = 200, startIndex = 0, domain, vendorId, status } = req.query
+        const { limit = 200, startIndex = 0, domain, vendorId, status ,activityId} = req.query
 
         const query = {}
         if (domain && domain != undefined) { query["domain"] = new mongoose.Types.ObjectId(domain) };
         if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
         if (status && status != undefined) { query["status"] = status };
-
+        if (activityId && activityId != undefined) { query["bussactivity.activityId"] = new mongoose.Types.ObjectId(activityId) };
         // console.log(query);
         const bussiness = await Bussiness.aggregate([
             {
                 $match: query
+            },
+            {
+                $lookup: {
+                    from: "activities",
+                    localField: "_id",
+                    foreignField: "bussinessId",
+                    as: "bussactivity"
+                }
             },
             {
                 $lookup: {
@@ -442,17 +450,25 @@ const getAllBussiness = asyncHandler(async (req, res) => {
 const getActiveBussiness = asyncHandler(async (req, res) => {
 
     try {
-        const { limit = 200, startIndex = 0, domain, vendorId } = req.query
+        const { limit = 200, startIndex = 0, domain, vendorId,activityId } = req.query
 
         const query = {}
         if (domain && domain != undefined) { query["domain"] = new mongoose.Types.ObjectId(domain) };
         if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
+        if (activityId && activityId != undefined) { query["bussactivity.activityId"] = new mongoose.Types.ObjectId(activityId) };
         query["status"] = "active";
         // console.log(query);
         const bussiness = await Bussiness.aggregate([
+           
             {
-                $match: query
+                $lookup: {
+                    from: "activities",
+                    localField: "_id",
+                    foreignField: "bussinessId",
+                    as: "bussactivity"
+                }
             },
+           
             {
                 $lookup: {
                     from: "reviews",
@@ -471,6 +487,9 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
                     },
 
                 }
+            },
+            {
+                $match: query
             },
             {
                 $project: {
