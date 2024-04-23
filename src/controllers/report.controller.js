@@ -76,15 +76,12 @@ const getDashboardCounts = asyncHandler(async (req, res) => {
 const getMonthwiseBussiness = asyncHandler(async (req, res) => {
     try {
       
-        const bussiness = await Bussiness.group({ "$month": "$createdAt" }).countDocuments().exec();
+        const bussiness = await Bussiness.aggregate( [
+            { $group: {  _id : { "$month": "$createdAt" }, count: { $sum: 1 } } },
+            { $project: { _id: 0 } }
+         ] )
       
-        if (!bussiness) {
-            throw new ApiError(500, `Something went wrong while fetching Bussiness list`)
-        } else if (bussiness.length == 0) {
-            throw new ApiError(404, `NO Data Found ! Bussiness list is empty`)
-
-        }
-
+       
         return res
             .status(200)
             .json(
