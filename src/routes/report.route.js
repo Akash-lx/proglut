@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import {
     getDashboardCounts,
-    getMonthwiseBussiness
+    getMonthwiseBussiness,
+    categoryWiseBussiness
 } from "../controllers/report.controller.js"
 // import { verifyVendorJWT } from "../middlewares/auth.middleware.js"
 // import { itemUpload } from "../middlewares/multer.middleware.js"
@@ -11,6 +12,7 @@ const router = Router();
 
 router.route("/dashboardCounts/").get(getDashboardCounts);
 router.route("/monthwiseBussiness/").get(getMonthwiseBussiness);
+router.route("/categoryWiseBussiness/").get(categoryWiseBussiness);
 
 
 

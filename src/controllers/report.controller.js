@@ -5,10 +5,12 @@ import { Booking } from "../models/booking.model.js"
 import { Event } from "../models/event.model.js"
 import { Vendor } from "../models/vendor.model.js"
 import { Review } from "../models/reviews.model.js"
+import { Domain } from "../models/domain.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 import fs from "fs"
+import { count } from "console"
 
 
 // const getAllBussiness = asyncHandler(async (req, res) => {
@@ -45,14 +47,14 @@ import fs from "fs"
 
 const getDashboardCounts = asyncHandler(async (req, res) => {
     try {
-        
+
         const curretnMonth = new Date().getMonth() + 1;
-       
+
         const totalBussiness = await Bussiness.countDocuments().exec();
-        const monthlyBussiness = await Bussiness.countDocuments({ "$expr": { "$eq": [{ "$month": "$createdAt" },curretnMonth] } }).exec();
+        const monthlyBussiness = await Bussiness.countDocuments({ "$expr": { "$eq": [{ "$month": "$createdAt" }, curretnMonth] } }).exec();
         const totalEvent = await Event.countDocuments().exec();
-        const totalVendor = await Vendor.countDocuments({usertype:"vendor"}).exec();
-        const totalCustomer = await Vendor.countDocuments({usertype:"user"}).exec();
+        const totalVendor = await Vendor.countDocuments({ usertype: "vendor" }).exec();
+        const totalCustomer = await Vendor.countDocuments({ usertype: "user" }).exec();
 
         const dashCounts = {
             "totalBussiness": totalBussiness,
@@ -75,17 +77,47 @@ const getDashboardCounts = asyncHandler(async (req, res) => {
 
 const getMonthwiseBussiness = asyncHandler(async (req, res) => {
     try {
-      
-        const bussiness = await Bussiness.aggregate( [
-            { $group: {  _id : { "$month": "$createdAt" }, count: { $sum: 1 } } },
-            { $project: { _id: 0 } }
-         ] )
-      
-       
+
+        // const bussiness = await Bussiness.aggregate([
+        //     { $group: { _id: {$dateToString: { format: "%B", date: "$createdAt" }}, count: { $sum: 1 }} },
+        //  ] );
+
+        // const events = await Event.aggregate([
+        //     { $group: { _id: {$dateToString: { format: "%B", date: "$createdAt" }}, count: { $sum: 1 }} },
+        //  ] )
+
+        // const booking = await Booking.aggregate([
+        //     { $group: { _id: {$dateToString: { format: "%B", date: "$createdAt" }}, count: { $sum: 1 }} },
+        //  ] )
+
+        let data1 = [];
+        let data2 = [];
+        let data3 = [];
+        let label = [];
+        const monthNames = ["January", "February", "March", "April", "May","June","July", "August", "September", "October", "November","December"];
+
+        for (let i = 1; i <= 12; i++) {
+            const monthlyBussiness = await Bussiness.countDocuments({ "$expr": { "$eq": [{ "$month": "$createdAt" }, i] } }).exec();
+            const monthlyEvent = await Event.countDocuments({ "$expr": { "$eq": [{ "$month": "$createdAt" }, i] } }).exec();
+            const monthlyBooking = await Booking.countDocuments({ "$expr": { "$eq": [{ "$month": "$createdAt" }, i] } }).exec();
+
+            data1.push(monthlyBussiness);
+            data2.push(monthlyEvent);
+            data3.push(monthlyBooking);
+            label.push(monthNames[i-1]);
+        }
+
+        const mainData = {
+            "data1": data1,
+            "data2": data2,
+            "data3": data3,
+            "label": label,
+        }
+
         return res
             .status(200)
             .json(
-                new ApiResponse(200, bussiness, `bussiness List Fetched successfully`)
+                new ApiResponse(200, mainData, `Fetched successfully`)
             )
     } catch (error) {
         return res
@@ -95,43 +127,28 @@ const getMonthwiseBussiness = asyncHandler(async (req, res) => {
 })
 
 
-const getBussinessHour = asyncHandler(async (req, res) => {
+const categoryWiseBussiness = asyncHandler(async (req, res) => {
     try {
-        const { day, bussinessId } = req.query
+        const category = await Domain.find({ type: "category", status: 'active' }).select("title").exec();
 
-        if (!bussinessId) {
-            throw new ApiError(400, `BussinessId is required`)
+        let data = [];
+        let label = [];
+     
+        for(let i=0; i< category.length ; i++) {
+            const monthlyBussiness = await Bussiness.countDocuments({domain: category[i]._id}).exec();
+          
+            data.push(monthlyBussiness);
+            label.push(category[i].title);
         }
 
-        const query = {}
-        query['_id'] = new mongoose.Types.ObjectId(bussinessId)
-        if (day && day != undefined) { query["bussinessHour.days"] = day };
-
-        const bussiness = await Bussiness.aggregate([
-            {
-                $unwind: "$bussinessHour"
-            },
-            {
-                $match: query
-            },
-            {
-                $group: {
-                    _id: "$bussinessHour",
-                }
-            }
-        ])
-
-        const slotdata = []
-        bussiness.forEach((element) => {
-            slotdata.push(element._id);
-        })
-
-        if (slotdata.length == 0) {
-            throw new ApiError(404, `Data Not Found ! list is empty`)
+        const mainData = {
+            "data": data,
+            "label": label,
         }
+
 
         return res.status(201).json(
-            new ApiResponse(200, slotdata, `Bussiness Hour List Fetch Successfully`)
+            new ApiResponse(200, mainData, `Fetch Successfully`)
         )
     } catch (error) {
         return res
@@ -144,6 +161,6 @@ const getBussinessHour = asyncHandler(async (req, res) => {
 
 export {
     getMonthwiseBussiness,
-    getBussinessHour,
+    categoryWiseBussiness,
     getDashboardCounts,
 }
