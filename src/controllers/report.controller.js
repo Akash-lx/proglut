@@ -76,87 +76,8 @@ const getDashboardCounts = asyncHandler(async (req, res) => {
 const getMonthwiseBussiness = asyncHandler(async (req, res) => {
     try {
       
-    
-        const bussiness = await Bussiness.aggregate([
-            // {
-            //     $match: query
-            // },
-            {
-                $lookup: {
-                    from: "activities",
-                    localField: "_id",
-                    foreignField: "bussinessId",
-                    as: "bussactivity"
-                }
-            },
-            {
-                $lookup: {
-                    from: "vendors",
-                    localField: "owner",
-                    foreignField: "_id",
-                    as: "owner",
-                    pipeline: [{
-                        $project: {
-                            fullName: 1,
-                            profileImage: 1,
-                            usertype: 1,
-                            status: 1,
-
-                        }
-                    }
-                    ]
-                }
-            }, {
-                $lookup: {
-                    from: "domains",
-                    localField: "domain",
-                    foreignField: "_id",
-                    as: "domain",
-                    pipeline: [{
-                        $project: {
-                            title: 1,
-
-                        }
-                    }
-                    ]
-                },
-            },
-            {
-                $lookup: {
-                    from: "reviews",
-                    localField: "_id",
-                    foreignField: "bussinessId",
-                    as: "reviews"
-                }
-            },
-            {
-                $addFields: {
-                    reviewcount: {
-                        $size: "$reviews"
-                    },
-                    rating: {
-                        $avg: "$reviews.rating"
-                    },
-
-                }
-            },
-            {
-                $project: {
-                    coverImage: 1,
-                    brandLogo: 1,
-                    title: 1,
-                    address: 1,
-                    status: 1,
-                    rating: 1,
-                    reviewcount: 1,
-                    owner: 1,
-                    domain: 1,
-                }
-            }, { $sort: { _id: -1 } },
-            { $skip: parseInt(startIndex) },
-            { $limit: parseInt(limit) },
-        ])
-
+        const bussiness = await Bussiness.group({ "$month": "$createdAt" }).countDocuments().exec();
+      
         if (!bussiness) {
             throw new ApiError(500, `Something went wrong while fetching Bussiness list`)
         } else if (bussiness.length == 0) {
