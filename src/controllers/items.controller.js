@@ -20,9 +20,7 @@ const getAllItem = asyncHandler(async (req, res) => {
         query["type"] = type;
        if (status && status != undefined) { query["status"] = status }else { query["status"] = {$ne:"delete"}};
 
-
-
-        const category = await Item.find(query)
+        const category = await Item.find(query).populate('unit','title')
             .select("-type")
             .sort("-_id")
             .skip(startIndex)
@@ -55,7 +53,7 @@ const getActiveItem = asyncHandler(async (req, res) => {
             throw new ApiError(400, `BussinessId is required`)
         }
         const type = req.path.split("/")[1];
-        const category = await Item.find({ bussinessId: bussinessId, type: type, status: 'active' })
+        const category = await Item.find({ bussinessId: bussinessId, type: type, status: 'active' }).populate('unit','title')
             .select("-type")
             .sort("-_id")
             .skip(startIndex)
@@ -132,7 +130,7 @@ const getItemById = asyncHandler(async (req, res) => {
 
         const { Id } = req.query
         const type = req.path.split("/")[1];
-        const createdItem = await Item.findById(Id)
+        const createdItem = await Item.findById(Id).populate('unit','title')
 
         if (!createdItem) {
             throw new ApiError(500, `Something went wrong while fetching ${type}`)

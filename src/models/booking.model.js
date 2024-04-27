@@ -11,32 +11,46 @@ const bookingSchema = new Schema(
             default: () => nanoid(7),
             index: { unique: true },
         },
-        type: {
-            type: String,
-            required: true,
-            index: true
-        },
 
-        activityId: [{
-            type: Schema.Types.ObjectId,
-            ref: "Activities",
+        activities: [
+            {
+                activityId: {
+                    type: Schema.Types.ObjectId,
+                    ref: "Activities",
+                    required: true
+                },
+                slotId: {
+                    type: Schema.Types.ObjectId,
+                    ref: "Slots",
+                    required: true
+                },
 
-        }],
-        eventId: {
-            type: Schema.Types.ObjectId,
-            ref: "Event",
+                date: {
+                    type: Date,
+                    required: true
+                },
 
-        },
-        slotId: [{
-            type: Schema.Types.ObjectId,
-            ref: "Slots",
+                person: {
+                    type: Number,
+                    required: true
+                },
+                rate: {
+                    type: Number,
+                    required: true
+                },
+                itemTotal: {
+                    type: Number,
+                    required: true
+                },
+                status: {
+                    type: String,
+                    required: true,
+                    enum: ['completed', 'running', 'expired'],
+                    default: "running",
+                },
+            },
+        ],
 
-        }],
-        packageId: {
-            type: Schema.Types.ObjectId,
-            ref: "Activities",
-
-        },
         addonItems: [
             {
                 itemId: {
@@ -46,7 +60,7 @@ const bookingSchema = new Schema(
                 },
                 type: {
                     type: String,
-                    required: true
+                   default:"item"
                 },
                 quantity: {
                     type: Number,
@@ -59,26 +73,47 @@ const bookingSchema = new Schema(
                 itemTotal: {
                     type: Number,
                     required: true
-                }
-
+                },
+                status: {
+                    type: String,
+                    required: true,
+                    enum: ['active', 'delivered'],
+                    default: "active",
+                },
             },
         ],
-        price: {
-            type: Number,
-            required: true
-        },
-        person: {
-            type: Number,
-            required: true
-        },
-        fromdate: {
-            type: Date,
-            required: true
-        },
-        todate: {
-            type: Date,
-           
-        },
+        addonFoods: [
+            {
+                itemId: {
+                    type: Schema.Types.ObjectId,
+                    ref: "Item",
+                    required: true
+                },
+                type: {
+                    type: String,
+                    default:"food"
+                },
+                quantity: {
+                    type: Number,
+                    required: true
+                },
+                rate: {
+                    type: Number,
+                    required: true
+                },
+                itemTotal: {
+                    type: Number,
+                    required: true
+                },
+                status: {
+                    type: String,
+                    required: true,
+                    enum: ['active', 'delivered'],
+                    default: "active",
+                },
+            },
+        ],
+
         totalPayable: {
             type: Number,
             required: true
@@ -98,7 +133,7 @@ const bookingSchema = new Schema(
         bussinessId: {
             type: Schema.Types.ObjectId,
             ref: "Bussiness",
-           
+
         },
         owner: {
             type: Schema.Types.ObjectId,
