@@ -9,7 +9,7 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 // Bussiness booking apis ////
 const addBussBookingInfo = asyncHandler(async (req, res) => {
     try {
-        const { activities, totalPayable, bussinessId, items,foods } = req.body
+        const { activities, totalPayable, bussinessId, items, foods } = req.body
 
         if (!activities || !bussinessId || !totalPayable) {
             throw new ApiError(400, "All fields are required")
@@ -85,7 +85,7 @@ const getBusBookingById = asyncHandler(async (req, res) => {
                             title: 1,
                             brandLogo: 1,
                             address: 1,
-                            rules: 1,
+                           
                         }
                     }
                     ]
@@ -95,7 +95,7 @@ const getBusBookingById = asyncHandler(async (req, res) => {
             {
                 $lookup: {
                     from: "activities",
-                    localField: "activityId",
+                    localField: "activities.activityId",
                     foreignField: "_id",
                     as: "activity",
                     pipeline: [
@@ -124,20 +124,48 @@ const getBusBookingById = asyncHandler(async (req, res) => {
             {
                 $lookup: {
                     from: "slots",
-                    localField: "slotId",
+                    localField: "activities.slotId",
                     foreignField: "_id",
                     as: "slots",
                     pipeline: [
                         {
                             $project: {
-                                title: 1,
-                                days: 1,
-                                fromdate: 1,
-                                todate: 1,
                                 startTime: 1,
                                 endTime: 1,
                                 rate: 1,
                                 status: 1,
+                            }
+                        }
+                    ]
+                },
+            },
+            {
+                $lookup: {
+                    from: "items",
+                    localField: "addonItems.itemId",
+                    foreignField: "_id",
+                    as: "items",
+                    pipeline: [
+                        {
+                            $project: {
+                                image: 1,
+                                title: 1,
+                                rate: 1,
+                            }
+                        }
+                    ]
+                },
+            },
+            {
+                $lookup: {
+                    from: "items",
+                    localField: "addonFoods.itemId",
+                    foreignField: "_id",
+                    as: "foods",
+                    pipeline: [
+                        {
+                            $project: {
+                                title: 1,
                             }
                         }
                     ]
@@ -149,37 +177,35 @@ const getBusBookingById = asyncHandler(async (req, res) => {
                 $addFields: {
                     businessId: { $first: "$business" },
                     customerId: { $first: "$customer" },
-                    activityId: "$activity.domain",
-
+                    "activities.title": { $first: "$activity.domain.title" },
+                    "activities.slots": { $first: "$slots" },
+                    "addonItems.title": { $first: "$items.title" },
+                    "addonFoods.title": { $first: "$foods.title" },
+                    //  "specs.fuel_type": "unleaded"
 
                 }
             },
             {
                 $project: {
                     bookNo: 1,
-                    type: 1,
-                    person: 1,
-                    fromdate: 1,
-                    todate: 1,
                     totalPayable: 1,
                     isPaid: 1,
                     paidAmount: 1,
                     status: 1,
                     addonItems: 1,
+                    addonFoods: 1,
                     transactionId: 1,
                     businessId: 1,
-                    eventId: 1,
-                    activityId: 1,
-                    slots: 1,
+                    activities:1,
                     customerId: 1,
                     createdAt: 1,
-                    packagesId: 1,
+                   
                 }
             }
         ])
 
         return res.status(201).json(
-            new ApiResponse(200, booking, `booking fetched Successfully`)
+            new ApiResponse(200, booking[0], `booking fetched Successfully`)
         )
     } catch (error) {
         return res
@@ -191,7 +217,7 @@ const getBusBookingById = asyncHandler(async (req, res) => {
 const updateBusBookingInfo = asyncHandler(async (req, res) => {
     try {
 
-        const { Id, activities, totalPayable, bussinessId, items,foods } = req.body
+        const { Id, activities, totalPayable, bussinessId, items, foods } = req.body
 
         if (!Id || !activities || !bussinessId || !totalPayable) {
             throw new ApiError(400, "All fields are required")
@@ -307,7 +333,7 @@ const getAllBusBooking = asyncHandler(async (req, res) => {
         if (bussinessId && bussinessId != undefined) { query["bussinessId"] = new mongoose.Types.ObjectId(bussinessId) };
         if (userId && userId != undefined) { query["owner"] = new mongoose.Types.ObjectId(userId) };
         if (status && status != undefined) { query["status"] = status };
-      
+
         // console.log(query);
         const booking = await Booking.aggregate([
             {
@@ -346,64 +372,41 @@ const getAllBusBooking = asyncHandler(async (req, res) => {
                 },
             },
 
-            // {
-            //     $lookup: {
-            //         from: "activities",
-            //         localField: "activityId",
-            //         foreignField: "_id",
-            //         as: "activity",
-            //         pipeline: [
-            //             {
-            //                 $lookup: {
-            //                     from: "domains",
-            //                     localField: "activityId",
-            //                     foreignField: "_id",
-            //                     as: "domain",
-            //                     pipeline: [{
-            //                         $project: {
-            //                             title: 1,
+            {
+                $lookup: {
+                    from: "activities",
+                    localField: "activities.activityId",
+                    foreignField: "_id",
+                    as: "activity",
+                    pipeline: [
+                        {
+                            $lookup: {
+                                from: "domains",
+                                localField: "activityId",
+                                foreignField: "_id",
+                                as: "domain",
+                                pipeline: [{
+                                    $project: {
+                                        title: 1,
 
-            //                         }
-            //                     }
-            //                     ]
-            //                 },
-            //             }, {
-            //                 $project: {
-            //                     domain: { $first: "$domain" },
-            //                 }
-            //             }
-            //         ]
-            //     },
-            // },
-            // {
-            //     $lookup: {
-            //         from: "slots",
-            //         localField: "slotId",
-            //         foreignField: "_id",
-            //         as: "slots",
-            //         pipeline: [
-            //             {
-            //                 $project: {
-            //                     title: 1,
-            //                     days: 1,
-            //                     fromdate: 1,
-            //                     todate: 1,
-            //                     startTime: 1,
-            //                     endTime: 1,
-            //                     rate: 1,
-            //                     status: 1,
-            //                 }
-            //             }
-            //         ]
-            //     },
-            // },
-
-
+                                    }
+                                }
+                                ]
+                            },
+                        }, {
+                            $project: {
+                                domain: { $first: "$domain" },
+                            }
+                        }
+                    ]
+                },
+            },
+         
             {
                 $addFields: {
                     businessId: { $first: "$business" },
                     customerId: { $first: "$customer" },
-                    // activityId: "$activity.domain",
+                    activityId: "$activity.domain",
                 }
             },
             {
@@ -414,8 +417,7 @@ const getAllBusBooking = asyncHandler(async (req, res) => {
                     paidAmount: 1,
                     status: 1,
                     businessId: 1,
-                    // activityId: 1,
-                    // slots: 1,
+                    activityId: 1,
                     customerId: 1,
                     createdAt: 1,
 
@@ -475,65 +477,43 @@ const getMyBusBooking = asyncHandler(async (req, res) => {
                 ]
             },
         },
-       
-        // {
-        //     $lookup: {
-        //         from: "activities",
-        //         localField: "activityId",
-        //         foreignField: "_id",
-        //         as: "activity",
-        //         pipeline: [
-        //             {
-        //                 $lookup: {
-        //                     from: "domains",
-        //                     localField: "activityId",
-        //                     foreignField: "_id",
-        //                     as: "domain",
-        //                     pipeline: [{
-        //                         $project: {
-        //                             title: 1,
 
-        //                         }
-        //                     }
-        //                     ]
-        //                 },
-        //             }, {
-        //                 $project: {
-        //                     domain: { $first: "$domain" },
-        //                 }
-        //             }
-        //         ]
-        //     },
-        // },
-        // {
-        //     $lookup: {
-        //         from: "slots",
-        //         localField: "slotId",
-        //         foreignField: "_id",
-        //         as: "slots",
-        //         pipeline: [
-        //             {
-        //                 $project: {
-        //                     title: 1,
-        //                     days: 1,
-        //                     fromdate: 1,
-        //                     todate: 1,
-        //                     startTime: 1,
-        //                     endTime: 1,
-        //                     rate: 1,
-        //                     status: 1,
-        //                 }
-        //             }
-        //         ]
-        //     },
-        // },
-       
+        {
+            $lookup: {
+                from: "activities",
+                localField: "activities.activityId",
+                foreignField: "_id",
+                as: "activity",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "domains",
+                            localField: "activityId",
+                            foreignField: "_id",
+                            as: "domain",
+                            pipeline: [{
+                                $project: {
+                                    title: 1,
+
+                                }
+                            }
+                            ]
+                        },
+                    }, {
+                        $project: {
+                            domain: { $first: "$domain" },
+                        }
+                    }
+                ]
+            },
+        },
+
         {
             $addFields: {
                 businessId: { $first: "$business" },
                 customerId: { $first: "$customer" },
-                // activityId: "$activity.domain",
-              
+                activityId: "$activity.domain",
+
             }
         },
         {
@@ -544,24 +524,15 @@ const getMyBusBooking = asyncHandler(async (req, res) => {
                 paidAmount: 1,
                 status: 1,
                 businessId: 1,
-                // activityId: 1,
-                // slots: 1,
+                activityId: 1,
                 customerId: 1,
                 createdAt: 1,
-            
+
             }
         }, { $sort: { _id: -1 } },
         { $skip: parseInt(startIndex) },
         { $limit: parseInt(limit) },
         ])
-
-        // const booking = await Booking.find(query)
-        // .populate('owner', 'fullName profileImage usertype status')
-        // .populate('bussinessId', 'brandLogo title')
-        // .populate('activityId', 'activityId')
-        // .populate('slotId', 'title startTime endTime duration rate')
-        // .populate('eventId', 'title owner hostName dateTime')
-
 
         if (!booking) {
             throw new ApiError(500, `Something went wrong while fetching Booking list`)
