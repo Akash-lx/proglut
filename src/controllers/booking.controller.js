@@ -356,7 +356,8 @@ const getAllBusBooking = asyncHandler(async (req, res) => {
                     }
                     ]
                 }
-            }, {
+            },
+             {
                 $lookup: {
                     from: "bussinesses",
                     localField: "bussinessId",
@@ -462,7 +463,26 @@ const getMyBusBooking = asyncHandler(async (req, res) => {
             $match: {
                 owner: new mongoose.Types.ObjectId(req.vendor._id)
             },
-        }, {
+        }, 
+        {
+            $lookup: {
+                from: "vendors",
+                localField: "owner",
+                foreignField: "_id",
+                as: "customer",
+                pipeline: [{
+                    $project: {
+                        fullName: 1,
+                        profileImage: 1,
+                        usertype: 1,
+                        status: 1,
+
+                    }
+                }
+                ]
+            }
+        },
+        {
             $lookup: {
                 from: "bussinesses",
                 localField: "bussinessId",
