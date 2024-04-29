@@ -7,9 +7,10 @@ import cookieParser from "cookie-parser"
 const app = express()
 
 app.use(cors({
-    origin: ["https://admin.proglut.com"],
-    methods:["GET","POST","PUT","PATCH","DELETE"],
-    allowedHeaders:["Content-Type", "Authorization"],
+    origin: process.env.CORS_ORIGIN,
+    // origin: ["https://admin.proglut.com"],
+    // methods:["GET","POST","PUT","PATCH","DELETE"],
+    // allowedHeaders:["Content-Type", "Authorization"],
     credentials: true
 }))
 
