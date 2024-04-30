@@ -51,161 +51,174 @@ const getBusBookingById = asyncHandler(async (req, res) => {
     try {
         const { Id } = req.query
 
-        const booking = await Booking.aggregate([
-            {
-                $match: {
-                    _id: new mongoose.Types.ObjectId(Id)
-                }
-            },
-            {
-                $lookup: {
-                    from: "vendors",
-                    localField: "owner",
-                    foreignField: "_id",
-                    as: "customer",
-                    pipeline: [{
-                        $project: {
-                            fullName: 1,
-                            profileImage: 1,
-                            usertype: 1,
-                            status: 1,
-
-                        }
-                    }
-                    ]
-                }
-            }, {
-                $lookup: {
-                    from: "bussinesses",
-                    localField: "bussinessId",
-                    foreignField: "_id",
-                    as: "business",
-                    pipeline: [{
-                        $project: {
-                            title: 1,
-                            brandLogo: 1,
-                            address: 1,
-                           
-                        }
-                    }
-                    ]
+        const booking = await Booking.findById(Id)
+            .populate('owner', 'fullName profileImage usertype status')
+            .populate('bussinessId', 'title brandLogo address')
+            .populate('addonItems.itemId', 'title')
+            .populate('addonFoods.itemId', 'title')
+            .populate({
+                path: 'activities.activityId',
+                populate: {
+                    path: 'activityId',
+                    select: 'title'
                 },
-            },
 
-            {
-                $lookup: {
-                    from: "activities",
-                    localField: "activities.activityId",
-                    foreignField: "_id",
-                    as: "activity",
-                    pipeline: [
-                        {
-                            $lookup: {
-                                from: "domains",
-                                localField: "activityId",
-                                foreignField: "_id",
-                                as: "domain",
-                                pipeline: [{
-                                    $project: {
-                                        title: 1,
+            })
+            .populate('activities.slotId', 'title startTime endTime duration rate').exec();
 
-                                    }
-                                }
-                                ]
-                            },
-                        }, {
-                            $project: {
-                                domain: { $first: "$domain" },
-                            }
-                        }
-                    ]
-                },
-            },
-            {
-                $lookup: {
-                    from: "slots",
-                    localField: "activities.slotId",
-                    foreignField: "_id",
-                    as: "slots",
-                    pipeline: [
-                        {
-                            $project: {
-                                startTime: 1,
-                                endTime: 1,
-                                rate: 1,
-                                status: 1,
-                            }
-                        }
-                    ]
-                },
-            },
-            {
-                $lookup: {
-                    from: "items",
-                    localField: "addonItems.itemId",
-                    foreignField: "_id",
-                    as: "items",
-                    pipeline: [
-                        {
-                            $project: {
-                                image: 1,
-                                title: 1,
-                                rate: 1,
-                            }
-                        }
-                    ]
-                },
-            },
-            {
-                $lookup: {
-                    from: "items",
-                    localField: "addonFoods.itemId",
-                    foreignField: "_id",
-                    as: "foods",
-                    pipeline: [
-                        {
-                            $project: {
-                                title: 1,
-                            }
-                        }
-                    ]
-                },
-            },
+        // const booking = await Booking.aggregate([
+        //     {
+        //         $match: {
+        //             _id: new mongoose.Types.ObjectId(Id)
+        //         }
+        //     },
+        //     {
+        //         $lookup: {
+        //             from: "vendors",
+        //             localField: "owner",
+        //             foreignField: "_id",
+        //             as: "customer",
+        //             pipeline: [{
+        //                 $project: {
+        //                     fullName: 1,
+        //                     profileImage: 1,
+        //                     usertype: 1,
+        //                     status: 1,
+
+        //                 }
+        //             }
+        //             ]
+        //         }
+        //     }, {
+        //         $lookup: {
+        //             from: "bussinesses",
+        //             localField: "bussinessId",
+        //             foreignField: "_id",
+        //             as: "business",
+        //             pipeline: [{
+        //                 $project: {
+        //                     title: 1,
+        //                     brandLogo: 1,
+        //                     address: 1,
+
+        //                 }
+        //             }
+        //             ]
+        //         },
+        //     },
+
+        //     {
+        //         $lookup: {
+        //             from: "activities",
+        //             localField: "activities.activityId",
+        //             foreignField: "_id",
+        //             as: "activity",
+        //             pipeline: [
+        //                 {
+        //                     $lookup: {
+        //                         from: "domains",
+        //                         localField: "activityId",
+        //                         foreignField: "_id",
+        //                         as: "domain",
+        //                         pipeline: [{
+        //                             $project: {
+        //                                 title: 1,
+
+        //                             }
+        //                         }
+        //                         ]
+        //                     },
+        //                 }, {
+        //                     $project: {
+        //                         domain: { $first: "$domain" },
+        //                     }
+        //                 }
+        //             ]
+        //         },
+        //     },
+        //     {
+        //         $lookup: {
+        //             from: "slots",
+        //             localField: "activities.slotId",
+        //             foreignField: "_id",
+        //             as: "slots",
+        //             pipeline: [
+        //                 {
+        //                     $project: {
+        //                         startTime: 1,
+        //                         endTime: 1,
+        //                         rate: 1,
+        //                         status: 1,
+        //                     }
+        //                 }
+        //             ]
+        //         },
+        //     },
+        //     {
+        //         $lookup: {
+        //             from: "items",
+        //             localField: "addonItems.itemId",
+        //             foreignField: "_id",
+        //             as: "items",
+        //             pipeline: [
+        //                 {
+        //                     $project: {
+        //                        title: 1,
+        //                     }
+        //                 }
+        //             ]
+        //         },
+        //     },
+        //     {
+        //         $lookup: {
+        //             from: "items",
+        //             localField: "addonFoods.itemId",
+        //             foreignField: "_id",
+        //             as: "foods",
+        //             pipeline: [
+        //                 {
+        //                     $project: {
+        //                         title: 1,
+        //                     }
+        //                 }
+        //             ]
+        //         },
+        //     },
 
 
-            {
-                $addFields: {
-                    businessId: { $first: "$business" },
-                    customerId: { $first: "$customer" },
-                    "activities.title": { $first: "$activity.domain.title" },
-                    "activities.slots": { $first: "$slots" },
-                    "addonItems.title": { $first: "$items.title" },
-                    "addonFoods.title": { $first: "$foods.title" },
-                    //  "specs.fuel_type": "unleaded"
+        //     {
+        //         $addFields: {
+        //             businessId: { $first: "$business" },
+        //             customerId: { $first: "$customer" },
+        //             "activities.title":"$activity.domain.title",
+        //             "activities.slots": "$slots",
+        //             "addonItems.title": "$items.title",
+        //             "addonFoods.title": "$foods.title",
+        //             //  "specs.fuel_type": "unleaded"
 
-                }
-            },
-            {
-                $project: {
-                    bookNo: 1,
-                    totalPayable: 1,
-                    isPaid: 1,
-                    paidAmount: 1,
-                    status: 1,
-                    addonItems: 1,
-                    addonFoods: 1,
-                    transactionId: 1,
-                    businessId: 1,
-                    activities:1,
-                    customerId: 1,
-                    createdAt: 1,
-                   
-                }
-            }
-        ])
+        //         }
+        //     },
+        //     {
+        //         $project: {
+        //             bookNo: 1,
+        //             totalPayable: 1,
+        //             isPaid: 1,
+        //             paidAmount: 1,
+        //             status: 1,
+        //             addonItems: 1,
+        //             addonFoods: 1,
+        //             transactionId: 1,
+        //             businessId: 1,
+        //             activities:1,
+        //             customerId: 1,
+        //             createdAt: 1,
+
+        //         }
+        //     }
+        // ])
 
         return res.status(201).json(
-            new ApiResponse(200, booking[0], `booking fetched Successfully`)
+            new ApiResponse(200, booking, `booking fetched Successfully`)
         )
     } catch (error) {
         return res
@@ -325,120 +338,54 @@ const updateBusStatusBooking = asyncHandler(async (req, res) => {
 
 const getAllBusBooking = asyncHandler(async (req, res) => {
     try {
-        const { limit = 200, startIndex = 0, domain, vendorId, status, userId, bussinessId } = req.query
+        const { limit = 200, startIndex = 0, search_in, domain, vendorId, status, userId, bussinessId, fromDate, toDate, activityId, state, city } = req.query
         const query = {}
-        // if (domain && domain != undefined) { query["domain"] = new mongoose.Types.ObjectId(domain) };
-        // if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
-        // if (status && status != undefined) { query["status"] = status };
+        const bussinesQuery = {}
+        const activi = {}
+        const bookingFdata = []
+        if (fromDate && toDate && fromDate != undefined && toDate != undefined) { query["activities.date"] = { $gte: fromDate, $lte: toDate } };
+
         if (bussinessId && bussinessId != undefined) { query["bussinessId"] = new mongoose.Types.ObjectId(bussinessId) };
         if (userId && userId != undefined) { query["owner"] = new mongoose.Types.ObjectId(userId) };
         if (status && status != undefined) { query["status"] = status };
+        // if (search_in && search_in != undefined) { bussinesQuery["bookNo"] = {$regex: `.*${search_in}.*`,$options:'i'} };
+        if (activityId && activityId != undefined) { activi["activityId"] = activityId };
 
-        // console.log(query);
-        const booking = await Booking.aggregate([
-            {
-                $match: query
-            },
-            {
-                $lookup: {
-                    from: "vendors",
-                    localField: "owner",
-                    foreignField: "_id",
-                    as: "customer",
-                    pipeline: [{
-                        $project: {
-                            fullName: 1,
-                            profileImage: 1,
-                            usertype: 1,
-                            status: 1,
+        if (domain && domain != undefined) { bussinesQuery["domain"] = domain };
+        if (vendorId && vendorId != undefined) { bussinesQuery["owner"] = vendorId };
+        if (state && state != undefined) { bussinesQuery["address.state"] = { $regex: `.*${state}.*`, $options: 'i' } };
+        if (city && city != undefined) { bussinesQuery["address.city"] = { $regex: `.*${city}.*`, $options: 'i' } };
 
-                        }
-                    }
-                    ]
-                }
-            },
-             {
-                $lookup: {
-                    from: "bussinesses",
-                    localField: "bussinessId",
-                    foreignField: "_id",
-                    as: "business",
-                    pipeline: [{
-                        $project: {
-                            title: 1,
-                            brandLogo: 1,
-                        }
-                    }
-                    ]
+        const booking = await Booking.find(query).select('bookNo totalPayable isPaid paidAmount status businessId activities.activityId owner createdAt')
+            .populate('owner', 'fullName profileImage usertype status')
+            .populate({ path: 'bussinessId', select: 'brandLogo title domain owner', match: bussinesQuery })
+            // .populate('activities.activityId', 'activityId')
+            .populate({
+                path: 'activities.activityId',
+                select: '-_id activityId',
+                match: activi,
+                populate: {
+                    path: 'activityId',
+                    select: 'title'
                 },
-            },
 
-            {
-                $lookup: {
-                    from: "activities",
-                    localField: "activities.activityId",
-                    foreignField: "_id",
-                    as: "activity",
-                    pipeline: [
-                        {
-                            $lookup: {
-                                from: "domains",
-                                localField: "activityId",
-                                foreignField: "_id",
-                                as: "domain",
-                                pipeline: [{
-                                    $project: {
-                                        title: 1,
+            })
+            .sort("-_id")
+            .skip(parseInt(startIndex))
+            .limit(parseInt(limit)).exec();
 
-                                    }
-                                }
-                                ]
-                            },
-                        }, {
-                            $project: {
-                                domain: { $first: "$domain" },
-                            }
-                        }
-                    ]
-                },
-            },
-         
-            {
-                $addFields: {
-                    businessId: { $first: "$business" },
-                    customerId: { $first: "$customer" },
-                    activityId: "$activity.domain",
+        if (booking.length > 0) {
+            booking.map((item) => {
+                if (item.bussinessId != null && item.activities[0].activityId != null) {
+                    bookingFdata.push(item);
+                    // console.log(item.bussinessId);
                 }
-            },
-            {
-                $project: {
-                    bookNo: 1,
-                    totalPayable: 1,
-                    isPaid: 1,
-                    paidAmount: 1,
-                    status: 1,
-                    businessId: 1,
-                    activityId: 1,
-                    customerId: 1,
-                    createdAt: 1,
+            })
+        }
 
-                }
-            }, { $sort: { _id: -1 } },
-            { $skip: parseInt(startIndex) },
-            { $limit: parseInt(limit) },
-        ])
-
-        // const booking = await Booking.find(query)
-        // .populate('owner', 'fullName profileImage usertype status')
-        // .populate('bussinessId', 'brandLogo title')
-        // .populate('activityId', 'activityId')
-        // .populate('slotId', 'title startTime endTime duration rate')
-        // .populate('eventId', 'title owner hostName dateTime')
-
-
-        if (!booking) {
+        if (!bookingFdata) {
             throw new ApiError(500, `Something went wrong while fetching Booking list`)
-        } else if (booking.length == 0) {
+        } else if (bookingFdata.length == 0) {
             throw new ApiError(404, `NO Data Found ! Booking list is empty`)
 
         }
@@ -446,7 +393,7 @@ const getAllBusBooking = asyncHandler(async (req, res) => {
         return res
             .status(200)
             .json(
-                new ApiResponse(200, booking, `booking List Fetched successfully`)
+                new ApiResponse(200, bookingFdata, `booking List Fetched successfully`)
             )
     } catch (error) {
         return res
@@ -458,12 +405,19 @@ const getAllBusBooking = asyncHandler(async (req, res) => {
 const getMyBusBooking = asyncHandler(async (req, res) => {
 
     try {
-        const { limit = 200, startIndex = 0, domain, vendorId, status, userId, bussinessId } = req.query
+        const { limit = 200, startIndex = 0 } = req.query
+        const usertype = req.vendor.usertype
+        const query = {};
+        const query2 = {};
+        const bookingFdata = [];
+        if (usertype == 'user') {
+            query['owner'] = new mongoose.Types.ObjectId(req.vendor._id);
+        } else if (usertype == 'vendor') {
+            query2["owner"] = new mongoose.Types.ObjectId(req.vendor._id);
+        }
         const booking = await Booking.aggregate([{
-            $match: {
-                owner: new mongoose.Types.ObjectId(req.vendor._id)
-            },
-        }, 
+            $match: query,
+        },
         {
             $lookup: {
                 from: "vendors",
@@ -488,12 +442,15 @@ const getMyBusBooking = asyncHandler(async (req, res) => {
                 localField: "bussinessId",
                 foreignField: "_id",
                 as: "business",
-                pipeline: [{
-                    $project: {
-                        title: 1,
-                        brandLogo: 1,
+                pipeline: [
+                    {
+                        "$match": query2
+                    }, {
+                        $project: {
+                            title: 1,
+                            brandLogo: 1,
+                        }
                     }
-                }
                 ]
             },
         },
@@ -554,9 +511,20 @@ const getMyBusBooking = asyncHandler(async (req, res) => {
         { $limit: parseInt(limit) },
         ])
 
-        if (!booking) {
+
+
+        if (booking.length > 0) {
+            booking.map((item) => {
+                if (item.businessId != null) {
+                    bookingFdata.push(item);
+                    // console.log(item.businessId);
+                }
+            })
+        }
+
+        if (!bookingFdata) {
             throw new ApiError(500, `Something went wrong while fetching Booking list`)
-        } else if (booking.length == 0) {
+        } else if (bookingFdata.length == 0) {
             throw new ApiError(404, `NO Data Found ! Booking list is empty`)
 
         }
@@ -564,7 +532,7 @@ const getMyBusBooking = asyncHandler(async (req, res) => {
         return res
             .status(200)
             .json(
-                new ApiResponse(200, booking, `booking List Fetched successfully`)
+                new ApiResponse(200, bookingFdata, `booking List Fetched successfully`)
             )
     } catch (error) {
         return res
@@ -623,96 +591,11 @@ const getEvtBookingById = asyncHandler(async (req, res) => {
     try {
         const { Id } = req.query
 
-        const booking = await EventBooking.aggregate([
-            {
-                $match: {
-                    _id: new mongoose.Types.ObjectId(Id)
-                }
-            },
-            {
-                $lookup: {
-                    from: "vendors",
-                    localField: "owner",
-                    foreignField: "_id",
-                    as: "customer",
-                    pipeline: [{
-                        $project: {
-                            fullName: 1,
-                            profileImage: 1,
-                            usertype: 1,
-                            status: 1,
-
-                        }
-                    }
-                    ]
-                }
-            },
-            {
-                $lookup: {
-                    from: "events",
-                    localField: "eventId",
-                    foreignField: "_id",
-                    as: "event",
-                    pipeline: [{
-                        $project: {
-                            title: 1,
-                            address: 1,
-                            hostName: 1,
-                            dateTime: 1,
-                            rules: 1,
-                        }
-                    }
-                    ]
-                },
-            },
-            {
-                $lookup: {
-                    from: "activities",
-                    localField: "packageId",
-                    foreignField: "_id",
-                    as: "packages",
-                    pipeline: [
-                        {
-                            $project: {
-                                title: 1,
-                                days: 1,
-                                fromdate: 1,
-                                todate: 1,
-                                startTime: 1,
-                                endTime: 1,
-                                rate: 1,
-                                status: 1,
-                            }
-                        }
-                    ]
-                },
-            },
-
-            {
-                $addFields: {
-                    eventId: { $first: "$event" },
-                    customerId: { $first: "$customer" },
-                    packagesId: { $first: "$packages" },
-
-                }
-            },
-            {
-                $project: {
-                    bookNo: 1,
-                    person: 1,
-                    fromdate: 1,
-                    totalPayable: 1,
-                    isPaid: 1,
-                    paidAmount: 1,
-                    status: 1,
-                    transactionId: 1,
-                    eventId: 1,
-                    customerId: 1,
-                    createdAt: 1,
-                    packagesId: 1,
-                }
-            }
-        ])
+        const booking = await Booking.findById(Id)
+            .populate('owner', 'fullName profileImage usertype status')
+            .populate('eventId', 'title hostName address dateTime rules')
+            .populate('packageId', 'title amount forPeople description')
+            .exec();
 
         return res.status(201).json(
             new ApiResponse(200, booking, `booking fetched Successfully`)
@@ -838,11 +721,23 @@ const updateEvtStatusBooking = asyncHandler(async (req, res) => {
 
 const getAllEvtBooking = asyncHandler(async (req, res) => {
     try {
-        const { limit = 200, startIndex = 0, status, userId } = req.query
+        const { limit = 200, startIndex = 0, fromDate, toDate, eventId, userId, status, vendorId, state, city,hostName } = req.query
         const query = {}
+        const eventQuery = {}
+        const bookingFdata = []
+       
+        if (fromDate && toDate && fromDate != undefined && toDate != undefined) { query["fromdate"] = { $gte: fromDate, $lte: toDate } };
 
+        if (eventId && eventId != undefined) { query["eventId"] = new mongoose.Types.ObjectId(eventId) };
         if (userId && userId != undefined) { query["owner"] = new mongoose.Types.ObjectId(userId) };
         if (status && status != undefined) { query["status"] = status };
+        // if (search_in && search_in != undefined) { bussinesQuery["bookNo"] = {$regex: `.*${search_in}.*`,$options:'i'} };
+      
+        if (vendorId && vendorId != undefined) { eventQuery["owner"] = vendorId };
+        if (state && state != undefined) { eventQuery["address.state"] = { $regex: `.*${state}.*`, $options: 'i' } };
+        if (city && city != undefined) { eventQuery["address.city"] = { $regex: `.*${city}.*`, $options: 'i' } };
+        if (hostName && hostName != undefined) { eventQuery["hostName"] = { $regex: `.*${hostName}.*`, $options: 'i' } };
+
 
         // console.log(query);
         const booking = await EventBooking.aggregate([
@@ -873,7 +768,10 @@ const getAllEvtBooking = asyncHandler(async (req, res) => {
                     localField: "eventId",
                     foreignField: "_id",
                     as: "event",
-                    pipeline: [{
+                    pipeline: [
+                        {
+                            "$match": eventQuery
+                        }, {
                         $project: {
                             title: 1,
                             hostName: 1,
@@ -935,9 +833,18 @@ const getAllEvtBooking = asyncHandler(async (req, res) => {
             { $limit: parseInt(limit) },
         ])
 
-        if (!booking) {
+        if (booking.length > 0) {
+            booking.map((item) => {
+                if (item.eventId != null) {
+                    bookingFdata.push(item);
+                    // console.log(item.businessId);
+                }
+            })
+        }
+
+        if (!bookingFdata) {
             throw new ApiError(500, `Something went wrong while fetching Booking list`)
-        } else if (booking.length == 0) {
+        } else if (bookingFdata.length == 0) {
             throw new ApiError(404, `NO Data Found ! Booking list is empty`)
 
         }
@@ -945,7 +852,7 @@ const getAllEvtBooking = asyncHandler(async (req, res) => {
         return res
             .status(200)
             .json(
-                new ApiResponse(200, booking, `booking List Fetched successfully`)
+                new ApiResponse(200, bookingFdata, `booking List Fetched successfully`)
             )
     } catch (error) {
         return res
@@ -958,13 +865,37 @@ const getMyEvtBooking = asyncHandler(async (req, res) => {
 
     try {
         const { limit = 200, startIndex = 0, status } = req.query
-        const type = req.path.split("/")[1];
-        // console.log(query);
+
+        const usertype = req.vendor.usertype
+        const query = {};
+        const query2 = {};
+        const bookingFdata = [];
+        if (usertype == 'user') {
+            query['owner'] = new mongoose.Types.ObjectId(req.vendor._id);
+        } else if (usertype == 'vendor') {
+            query2["owner"] = new mongoose.Types.ObjectId(req.vendor._id);
+        }
+
         const booking = await EventBooking.aggregate([{
-            $match: {
-                type,
-                owner: new mongoose.Types.ObjectId(req.vendor._id)
-            },
+            $match: query,
+        },
+        {
+            $lookup: {
+                from: "vendors",
+                localField: "owner",
+                foreignField: "_id",
+                as: "customer",
+                pipeline: [{
+                    $project: {
+                        fullName: 1,
+                        profileImage: 1,
+                        usertype: 1,
+                        status: 1,
+
+                    }
+                }
+                ]
+            }
         },
         {
             $lookup: {
@@ -972,7 +903,10 @@ const getMyEvtBooking = asyncHandler(async (req, res) => {
                 localField: "eventId",
                 foreignField: "_id",
                 as: "event",
-                pipeline: [{
+                pipeline: [
+                    {
+                        "$match": query2
+                    }, {
                     $project: {
                         title: 1,
                         hostName: 1,
@@ -993,13 +927,8 @@ const getMyEvtBooking = asyncHandler(async (req, res) => {
                     {
                         $project: {
                             title: 1,
-                            days: 1,
-                            fromdate: 1,
-                            todate: 1,
-                            startTime: 1,
-                            endTime: 1,
-                            rate: 1,
-                            status: 1,
+                            amount: 1,
+                            forPeople: 1,
                         }
                     }
                 ]
@@ -1033,18 +962,25 @@ const getMyEvtBooking = asyncHandler(async (req, res) => {
         { $limit: parseInt(limit) },
         ])
 
+        if (booking.length > 0) {
+            booking.map((item) => {
+                if (item.eventId != null) {
+                    bookingFdata.push(item);
+                    // console.log(item.businessId);
+                }
+            })
+        }
 
-        if (!booking) {
+        if (!bookingFdata) {
             throw new ApiError(500, `Something went wrong while fetching Booking list`)
-        } else if (booking.length == 0) {
+        } else if (bookingFdata.length == 0) {
             throw new ApiError(404, `NO Data Found ! Booking list is empty`)
 
         }
-
         return res
             .status(200)
             .json(
-                new ApiResponse(200, booking, `booking List Fetched successfully`)
+                new ApiResponse(200, bookingFdata, `booking List Fetched successfully`)
             )
     } catch (error) {
         return res
