@@ -340,24 +340,44 @@ const updateStatusBussiness = asyncHandler(async (req, res) => {
 
 const getAllBussiness = asyncHandler(async (req, res) => {
     try {
-        const { limit = 200, startIndex = 0, domain, vendorId, status ,activityId} = req.query
+        const { limit = 200, startIndex = 0, domain, vendorId, status, activityId, state, city, fromDate, toDate } = req.query
 
         const query = {}
         if (domain && domain != undefined) { query["domain"] = new mongoose.Types.ObjectId(domain) };
         if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
         if (status && status != undefined) { query["status"] = status };
+        if (state && state != undefined) { query["address.state"] = { $regex: `.*${state}.*`, $options: 'i' } };
+        if (city && city != undefined) { query["address.city"] = { $regex: `.*${city}.*`, $options: 'i' } };
         if (activityId && activityId != undefined) { query["bussactivity.activityId"] = new mongoose.Types.ObjectId(activityId) };
+        if (fromDate && toDate && fromDate != undefined && toDate != undefined) { query["createdAt"] = { "$gte": new Date(fromDate), "$lte": new Date(toDate) } };
+
         // console.log(query);
         const bussiness = await Bussiness.aggregate([
-            {
-                $match: query
-            },
+
             {
                 $lookup: {
                     from: "activities",
                     localField: "_id",
                     foreignField: "bussinessId",
-                    as: "bussactivity"
+                    as: "bussactivity",
+                    pipeline: [{
+                        $lookup: {
+                            from: "slots",
+                            localField: "_id",
+                            foreignField: "busActId",
+                            as: "slots"
+                        }
+                    },
+                    // {
+                    //     $project: {
+                    //         fullName: 1,
+                    //         profileImage: 1,
+                    //         usertype: 1,
+                    //         status: 1,
+
+                    //     }
+                    // }
+                    ]
                 }
             },
             {
@@ -393,6 +413,9 @@ const getAllBussiness = asyncHandler(async (req, res) => {
                 },
             },
             {
+                $match: query
+            },
+            {
                 $lookup: {
                     from: "reviews",
                     localField: "_id",
@@ -422,6 +445,7 @@ const getAllBussiness = asyncHandler(async (req, res) => {
                     reviewcount: 1,
                     owner: 1,
                     domain: 1,
+                    createdAt: 1
                 }
             }, { $sort: { _id: -1 } },
             { $skip: parseInt(startIndex) },
@@ -450,7 +474,7 @@ const getAllBussiness = asyncHandler(async (req, res) => {
 const getActiveBussiness = asyncHandler(async (req, res) => {
 
     try {
-        const { limit = 200, startIndex = 0, domain, vendorId,activityId } = req.query
+        const { limit = 200, startIndex = 0, domain, vendorId, activityId } = req.query
 
         const query = {}
         if (domain && domain != undefined) { query["domain"] = new mongoose.Types.ObjectId(domain) };
@@ -459,7 +483,7 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
         query["status"] = "active";
         // console.log(query);
         const bussiness = await Bussiness.aggregate([
-           
+
             {
                 $lookup: {
                     from: "activities",
@@ -468,7 +492,7 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
                     as: "bussactivity"
                 }
             },
-           
+
             {
                 $lookup: {
                     from: "reviews",

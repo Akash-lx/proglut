@@ -41,13 +41,13 @@ router.route("/event/").get(getAllEvtBooking)
     .patch(verifyVendorJWT, updateEvtBookingInfo);
 
 router
-    .route("/detail")
+    .route("/event/detail")
     .get(getEvtBookingById)
     .patch(updateEvtStatusBooking);
 // .delete(deleteBooking)
 
-router.route("/payment").patch(updateEvtBookingPayment);
-router.route("/business/my").get(verifyVendorJWT, getMyEvtBooking);
+router.route("/event/payment").patch(updateEvtBookingPayment);
+router.route("/event/my").get(verifyVendorJWT, getMyEvtBooking);
 
 
 export default router

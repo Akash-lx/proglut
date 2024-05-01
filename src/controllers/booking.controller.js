@@ -57,7 +57,7 @@ const getBusBookingById = asyncHandler(async (req, res) => {
             .populate('addonItems.itemId', 'title')
             .populate('addonFoods.itemId', 'title')
             .populate({
-                path: 'activities.activityId',
+                path: 'activities.busActivityId',
                 populate: {
                     path: 'activityId',
                     select: 'title'
@@ -356,13 +356,13 @@ const getAllBusBooking = asyncHandler(async (req, res) => {
         if (state && state != undefined) { bussinesQuery["address.state"] = { $regex: `.*${state}.*`, $options: 'i' } };
         if (city && city != undefined) { bussinesQuery["address.city"] = { $regex: `.*${city}.*`, $options: 'i' } };
 
-        const booking = await Booking.find(query).select('bookNo totalPayable isPaid paidAmount status businessId activities.activityId owner createdAt')
+        const booking = await Booking.find(query).select('bookNo totalPayable isPaid paidAmount status businessId activities.busActivityId owner createdAt')
             .populate('owner', 'fullName profileImage usertype status')
             .populate({ path: 'bussinessId', select: 'brandLogo title domain owner', match: bussinesQuery })
             // .populate('activities.activityId', 'activityId')
             .populate({
-                path: 'activities.activityId',
-                select: '-_id activityId',
+                path: 'activities.busActivityId',
+                select: '-_id busActivityId',
                 match: activi,
                 populate: {
                     path: 'activityId',
@@ -376,7 +376,7 @@ const getAllBusBooking = asyncHandler(async (req, res) => {
 
         if (booking.length > 0) {
             booking.map((item) => {
-                if (item.bussinessId != null && item.activities[0].activityId != null) {
+                if (item.bussinessId != null && item.activities[0].busActivityId != null) {
                     bookingFdata.push(item);
                     // console.log(item.bussinessId);
                 }
@@ -458,7 +458,7 @@ const getMyBusBooking = asyncHandler(async (req, res) => {
         {
             $lookup: {
                 from: "activities",
-                localField: "activities.activityId",
+                localField: "activities.busActivityId",
                 foreignField: "_id",
                 as: "activity",
                 pipeline: [
@@ -591,7 +591,7 @@ const getEvtBookingById = asyncHandler(async (req, res) => {
     try {
         const { Id } = req.query
 
-        const booking = await Booking.findById(Id)
+        const booking = await EventBooking.findById(Id)
             .populate('owner', 'fullName profileImage usertype status')
             .populate('eventId', 'title hostName address dateTime rules')
             .populate('packageId', 'title amount forPeople description')
@@ -733,7 +733,7 @@ const getAllEvtBooking = asyncHandler(async (req, res) => {
         if (status && status != undefined) { query["status"] = status };
         // if (search_in && search_in != undefined) { bussinesQuery["bookNo"] = {$regex: `.*${search_in}.*`,$options:'i'} };
       
-        if (vendorId && vendorId != undefined) { eventQuery["owner"] = vendorId };
+        if (vendorId && vendorId != undefined) { eventQuery["owner"] = new mongoose.Types.ObjectId(vendorId)};
         if (state && state != undefined) { eventQuery["address.state"] = { $regex: `.*${state}.*`, $options: 'i' } };
         if (city && city != undefined) { eventQuery["address.city"] = { $regex: `.*${city}.*`, $options: 'i' } };
         if (hostName && hostName != undefined) { eventQuery["hostName"] = { $regex: `.*${hostName}.*`, $options: 'i' } };

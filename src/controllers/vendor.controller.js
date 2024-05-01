@@ -511,13 +511,14 @@ const updateVendorStatus = asyncHandler(async (req, res) => {
 const getVendorsList = asyncHandler(async (req, res) => {
     try {
         const usertype = req.path.split("/")[1];
-        const { limit = 200, startIndex = 0,status,fromDate,toDate } = req.query
+        const { limit = 200, startIndex = 0,status,fromDate,toDate,state,city } = req.query
 
         const query = {}
         query["usertype"] = usertype ;
         if (status && status != undefined) { query["status"] = status };
         if (fromDate && toDate && fromDate != undefined && toDate != undefined) { query["createdAt"] = {"$gte": fromDate,"$lte": toDate } };
-        // if (toDate && toDate != undefined) { query["createdAt"] = {"$lte": new Date(toDate) } };
+        if (state && state != undefined) { bussinesQuery["address.state"] = { $regex: `.*${state}.*`, $options: 'i' } };
+        if (city && city != undefined) { bussinesQuery["address.city"] = { $regex: `.*${city}.*`, $options: 'i' } };
 
         // "$expr": { "$eq": [{ "$month": "$createdAt" }, i] } 
 

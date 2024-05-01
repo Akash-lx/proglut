@@ -14,7 +14,7 @@ const bookingSchema = new Schema(
 
         activities: [
             {
-                activityId: {
+                busActivityId: {
                     type: Schema.Types.ObjectId,
                     ref: "Activities",
                     required: true
