@@ -21,14 +21,14 @@ const addBussBookingInfo = asyncHandler(async (req, res) => {
         const prvendor = await Booking.findOne().sort({ _id: -1 }).select('bookNo').exec();
         let bookNo = '';
         if (prvendor?.bookNo) {
-           let codes = prvendor.bookNo.substring(9)
+           let codes = prvendor.bookNo.substring(8)
            let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
         //    console.log(datef);
-            bookNo = `PGT${datef}${(parseInt(codes)+1).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+            bookNo = `PG${datef}${(parseInt(codes)+1).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
         } else {
             let codes = 1;
             let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
-            bookNo = `PGT${datef}${(parseInt(codes)).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+            bookNo = `PG${datef}${(parseInt(codes)).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
         }
 
         const booking = await Booking.create({
@@ -574,14 +574,14 @@ const addEvtBookingInfo = asyncHandler(async (req, res) => {
         const prvendor = await EventBooking.findOne().sort({ _id: -1 }).select('bookNo').exec();
         let bookNo = '';
         if (prvendor?.bookNo) {
-           let codes = prvendor.bookNo.substring(9)
+           let codes = prvendor.bookNo.substring(8)
            let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
         //    console.log(datef);
-            bookNo = `PGT${datef}${(parseInt(codes)+1).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+            bookNo = `PG${datef}${(parseInt(codes)+1).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
         } else {
             let codes = 1;
             let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
-            bookNo = `PGT${datef}${(parseInt(codes)).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+            bookNo = `PG${datef}${(parseInt(codes)).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
         }
 
         const evtBooking = await EventBooking.create({

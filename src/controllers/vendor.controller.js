@@ -66,14 +66,14 @@ const registerVendor = asyncHandler(async (req, res) => {
         const prvendor = await Vendor.findOne({ usertype }).sort({ _id: -1 }).select('uniqCode').exec();
         let uniqCode = '';
         if (prvendor?.uniqCode) {
-           let codes = prvendor.uniqCode.substring(8)
+           let codes = prvendor.uniqCode.substring(9)
            let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
         //    console.log(datef);
-            uniqCode = `${usertype == "user" ?"PGC" :"PG"}${datef}${(parseInt(codes)+1).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+            uniqCode = `${usertype == "user" ?"PGC" :"PGP"}${datef}${(parseInt(codes)+1).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
         } else {
             let codes = 1;
             let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
-            uniqCode = `${usertype == "user" ?"PGC" :"PG"}${datef}${(parseInt(codes)).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+            uniqCode = `${usertype == "user" ?"PGC" :"PGP"}${datef}${(parseInt(codes)).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
         }
         // console.log(prvendor)
         // console.log(uniqCode)

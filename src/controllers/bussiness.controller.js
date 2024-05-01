@@ -7,8 +7,6 @@ import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 import fs from "fs"
 
-
-
 const addBussinessInfo = asyncHandler(async (req, res) => {
     try {
         const { title, city, state, street, area, pincode, latitude, longitude, fullAddress, category } = req.body
@@ -492,17 +490,17 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
                     localField: "_id",
                     foreignField: "bussinessId",
                     as: "bussactivity",
-                    pipeline: [{
-                        $lookup: {
-                            from: "slots",
-                            localField: "_id",
-                            foreignField: "busActId",
-                            as: "slots"
-                        }
-                    },
-                    {
-                        "$group": { "_id": "$slots._id", "minprice": { "$min": "$slots.rate" }, data: { $push: "$$ROOT" } }
-                      },
+                    // pipeline: [{
+                    //     $lookup: {
+                    //         from: "slots",
+                    //         localField: "_id",
+                    //         foreignField: "busActId",
+                    //         as: "slots"
+                    //     }
+                    // },
+                    // {
+                    //     "$sort": { "rate": 1 } 
+                    //   },
                     // {
                     //     $project: {
                     //         fullName: 1,
@@ -512,7 +510,7 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
 
                     //     }
                     // }
-                    ]
+                    // ]
                 }
             },
 
@@ -547,7 +545,7 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
                     status: 1,
                     rating: 1,
                     reviewcount: 1,
-                    bussactivity:1,
+                    // bussactivity:1,
                 }
             }, { $sort: { _id: -1 } },
             { $skip: parseInt(startIndex) },
