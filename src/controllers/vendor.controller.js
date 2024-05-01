@@ -63,12 +63,27 @@ const registerVendor = asyncHandler(async (req, res) => {
             throw new ApiError(409, `${usertype} with email or mobile already exists`)
         }
 
+        const prvendor = await Vendor.findOne({ usertype }).sort({ _id: -1 }).select('uniqCode').exec();
+        let uniqCode = '';
+        if (prvendor?.uniqCode) {
+           let codes = prvendor.uniqCode.substring(8)
+           let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
+        //    console.log(datef);
+            uniqCode = `${usertype == "user" ?"PGC" :"PG"}${datef}${(parseInt(codes)+1).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+        } else {
+            let codes = 1;
+            let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
+            uniqCode = `${usertype == "user" ?"PGC" :"PG"}${datef}${(parseInt(codes)).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+        }
+        // console.log(prvendor)
+        // console.log(uniqCode)
         const vendor = await Vendor.create({
             fullName,
             email,
             gender: gender,
             mobile,
-            usertype
+            usertype,
+            uniqCode,
         })
 
         const createdVendor = await Vendor.findById(vendor._id).select(
@@ -443,8 +458,8 @@ const updateVendorImage = asyncHandler(async (req, res) => {
         if (vendorProfile.profileImage && vendorProfile.profileImage != '') {
             if (fs.existsSync(`public/vendorImages/${vendorProfile.profileImage}`)) {
                 fs.unlinkSync(`public/vendorImages/${vendorProfile.profileImage}`);
-              }
-       
+            }
+
         }
         const vendor = await Vendor.findByIdAndUpdate(
             req.vendor?._id,
@@ -511,12 +526,12 @@ const updateVendorStatus = asyncHandler(async (req, res) => {
 const getVendorsList = asyncHandler(async (req, res) => {
     try {
         const usertype = req.path.split("/")[1];
-        const { limit = 200, startIndex = 0,status,fromDate,toDate,state,city } = req.query
+        const { limit = 200, startIndex = 0, status, fromDate, toDate, state, city } = req.query
 
         const query = {}
-        query["usertype"] = usertype ;
+        query["usertype"] = usertype;
         if (status && status != undefined) { query["status"] = status };
-        if (fromDate && toDate && fromDate != undefined && toDate != undefined) { query["createdAt"] = {"$gte": fromDate,"$lte": toDate } };
+        if (fromDate && toDate && fromDate != undefined && toDate != undefined) { query["createdAt"] = { "$gte": fromDate, "$lte": toDate } };
         if (state && state != undefined) { bussinesQuery["address.state"] = { $regex: `.*${state}.*`, $options: 'i' } };
         if (city && city != undefined) { bussinesQuery["address.city"] = { $regex: `.*${city}.*`, $options: 'i' } };
 
@@ -669,7 +684,7 @@ const adminLogin = asyncHandler(async (req, res) => {
 const updateVendorDetail = asyncHandler(async (req, res) => {
 
     try {
-        const {Id, fullName, gender, city, state, street, area, pincode, latitude, longitude, mobile, email} = req.body
+        const { Id, fullName, gender, city, state, street, area, pincode, latitude, longitude, mobile, email } = req.body
         const usertype = req.path.split("/")[1];
         if (!Id) {
             throw new ApiError(400, "Id is required")
@@ -679,7 +694,7 @@ const updateVendorDetail = asyncHandler(async (req, res) => {
         }
 
         const vendor = await Vendor.findByIdAndUpdate(
-           Id,
+            Id,
             {
                 $set: {
                     fullName,
@@ -695,7 +710,7 @@ const updateVendorDetail = asyncHandler(async (req, res) => {
                     },
                     mobile,
                     email,
-                   
+
                 }
             },
             { new: true }

@@ -24,10 +24,24 @@ const addBussinessInfo = asyncHandler(async (req, res) => {
         })
 
         if (existedBussiness) {
-            throw new new ApiError(409, `Bussiness with same title of same category already exists`)
+            throw new ApiError(409, `Bussiness with same title of same category already exists`)
         }
 
+        const prvendor = await Bussiness.findOne().sort({ _id: -1 }).select('uniqCode').exec();
+        let uniqCode = '';
+        if (prvendor?.uniqCode) {
+           let codes = prvendor.uniqCode.substring(9)
+           let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
+        //    console.log(codes);
+            uniqCode = `PGB${datef}${(parseInt(codes)+1).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+        } else {
+            let codes = 1;
+            let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
+            uniqCode = `PGB${datef}${(parseInt(codes)).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+        }
+        // console.log(uniqCode);
         const bussiness = await Bussiness.create({
+            uniqCode,
             title,
             address: {
                 city, state, street, area, pincode, latitude, longitude, fullAddress
@@ -348,8 +362,9 @@ const getAllBussiness = asyncHandler(async (req, res) => {
         if (status && status != undefined) { query["status"] = status };
         if (state && state != undefined) { query["address.state"] = { $regex: `.*${state}.*`, $options: 'i' } };
         if (city && city != undefined) { query["address.city"] = { $regex: `.*${city}.*`, $options: 'i' } };
-        if (activityId && activityId != undefined) { query["bussactivity.activityId"] = new mongoose.Types.ObjectId(activityId) };
         if (fromDate && toDate && fromDate != undefined && toDate != undefined) { query["createdAt"] = { "$gte": new Date(fromDate), "$lte": new Date(toDate) } };
+        if (activityId && activityId != undefined) { query["bussactivity.activityId"] = new mongoose.Types.ObjectId(activityId) };
+        // if (activityId && activityId != undefined) { query["bussactivity.slots.rate"] = new mongoose.Types.ObjectId(activityId) };
 
         // console.log(query);
         const bussiness = await Bussiness.aggregate([
@@ -360,24 +375,7 @@ const getAllBussiness = asyncHandler(async (req, res) => {
                     localField: "_id",
                     foreignField: "bussinessId",
                     as: "bussactivity",
-                    pipeline: [{
-                        $lookup: {
-                            from: "slots",
-                            localField: "_id",
-                            foreignField: "busActId",
-                            as: "slots"
-                        }
-                    },
-                    // {
-                    //     $project: {
-                    //         fullName: 1,
-                    //         profileImage: 1,
-                    //         usertype: 1,
-                    //         status: 1,
-
-                    //     }
-                    // }
-                    ]
+                   
                 }
             },
             {
@@ -445,7 +443,7 @@ const getAllBussiness = asyncHandler(async (req, res) => {
                     reviewcount: 1,
                     owner: 1,
                     domain: 1,
-                    createdAt: 1
+                    createdAt: 1,
                 }
             }, { $sort: { _id: -1 } },
             { $skip: parseInt(startIndex) },
@@ -474,12 +472,16 @@ const getAllBussiness = asyncHandler(async (req, res) => {
 const getActiveBussiness = asyncHandler(async (req, res) => {
 
     try {
-        const { limit = 200, startIndex = 0, domain, vendorId, activityId } = req.query
+        const { limit = 200, startIndex = 0, domain, vendorId, activityId,state,city } = req.query
 
         const query = {}
         if (domain && domain != undefined) { query["domain"] = new mongoose.Types.ObjectId(domain) };
         if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
+        if (state && state != undefined) { query["address.state"] = { $regex: `.*${state}.*`, $options: 'i' } };
+        if (city && city != undefined) { query["address.city"] = { $regex: `.*${city}.*`, $options: 'i' } };
         if (activityId && activityId != undefined) { query["bussactivity.activityId"] = new mongoose.Types.ObjectId(activityId) };
+          // if (activityId && activityId != undefined) { query["bussactivity.slots.rate"] = new mongoose.Types.ObjectId(activityId) };
+
         query["status"] = "active";
         // console.log(query);
         const bussiness = await Bussiness.aggregate([
@@ -489,7 +491,28 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
                     from: "activities",
                     localField: "_id",
                     foreignField: "bussinessId",
-                    as: "bussactivity"
+                    as: "bussactivity",
+                    pipeline: [{
+                        $lookup: {
+                            from: "slots",
+                            localField: "_id",
+                            foreignField: "busActId",
+                            as: "slots"
+                        }
+                    },
+                    {
+                        "$group": { "_id": "$slots._id", "minprice": { "$min": "$slots.rate" }, data: { $push: "$$ROOT" } }
+                      },
+                    // {
+                    //     $project: {
+                    //         fullName: 1,
+                    //         profileImage: 1,
+                    //         usertype: 1,
+                    //         status: 1,
+
+                    //     }
+                    // }
+                    ]
                 }
             },
 
@@ -524,6 +547,7 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
                     status: 1,
                     rating: 1,
                     reviewcount: 1,
+                    bussactivity:1,
                 }
             }, { $sort: { _id: -1 } },
             { $skip: parseInt(startIndex) },

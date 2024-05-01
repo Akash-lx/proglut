@@ -18,8 +18,21 @@ const addBussBookingInfo = asyncHandler(async (req, res) => {
 
         // console.log(items)
 
-        const booking = await Booking.create({
+        const prvendor = await Booking.findOne().sort({ _id: -1 }).select('bookNo').exec();
+        let bookNo = '';
+        if (prvendor?.bookNo) {
+           let codes = prvendor.bookNo.substring(9)
+           let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
+        //    console.log(datef);
+            bookNo = `PGT${datef}${(parseInt(codes)+1).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+        } else {
+            let codes = 1;
+            let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
+            bookNo = `PGT${datef}${(parseInt(codes)).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+        }
 
+        const booking = await Booking.create({
+            bookNo,
             activities,
             totalPayable,
             bussinessId,
@@ -53,7 +66,7 @@ const getBusBookingById = asyncHandler(async (req, res) => {
 
         const booking = await Booking.findById(Id)
             .populate('owner', 'fullName profileImage usertype status')
-            .populate('bussinessId', 'title brandLogo address')
+            .populate('bussinessId', 'title brandLogo coverImage address')
             .populate('addonItems.itemId', 'title')
             .populate('addonFoods.itemId', 'title')
             .populate({
@@ -558,7 +571,21 @@ const addEvtBookingInfo = asyncHandler(async (req, res) => {
             throw new ApiError(400, "All fields are required")
         }
 
+        const prvendor = await EventBooking.findOne().sort({ _id: -1 }).select('bookNo').exec();
+        let bookNo = '';
+        if (prvendor?.bookNo) {
+           let codes = prvendor.bookNo.substring(9)
+           let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
+        //    console.log(datef);
+            bookNo = `PGT${datef}${(parseInt(codes)+1).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+        } else {
+            let codes = 1;
+            let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
+            bookNo = `PGT${datef}${(parseInt(codes)).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+        }
+
         const evtBooking = await EventBooking.create({
+            bookNo,
             packageId,
             price,
             person,

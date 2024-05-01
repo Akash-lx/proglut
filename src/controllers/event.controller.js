@@ -30,7 +30,22 @@ const addEventInfo = asyncHandler(async (req, res) => {
             throw new ApiError(409, `Event with same title of same startDate already exists`)
         }
 
+        const prvendor = await Event.findOne().sort({ _id: -1 }).select('uniqCode').exec();
+        let uniqCode = '';
+        if (prvendor?.uniqCode) {
+           let codes = prvendor.uniqCode.substring(9)
+           let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
+        //    console.log(codes);
+            uniqCode = `PGE${datef}${(parseInt(codes)+1).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+        } else {
+            let codes = 1;
+            let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
+            uniqCode = `PGE${datef}${(parseInt(codes)).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+        }
+        // console.log(uniqCode);
+
         const event = await Event.create({
+            uniqCode,
             title,
             address: {
                 city, state, street, area, pincode, latitude, longitude, fullAddress

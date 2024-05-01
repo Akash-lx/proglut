@@ -3,6 +3,12 @@ import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const eventSchema = new Schema(
     {
+        uniqCode: {
+            type: String,
+            required: true,
+            index: { unique: true },
+        },
+
         coverImages: [],
 
         title: {
@@ -44,7 +50,7 @@ const eventSchema = new Schema(
                 type: String,
             }
         },
-       
+
         rules: [{
             type: String,
         }],

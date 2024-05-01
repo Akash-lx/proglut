@@ -4,14 +4,10 @@ import jwt from "jsonwebtoken"
 
 const vendorSchema = new Schema(
     {
-        // username: {
-        //     type: String,
-        //     required: true,
-        //     unique: true,
-        //     lowercase: true,
-        //     trim: true, 
-        //     index: true
-        // },
+        uniqCode: {
+            type: String,
+            required: true,
+          },
 
         email: {
             type: String,

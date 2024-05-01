@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
-import { nanoid } from 'nanoid';
+// import { nanoid } from 'nanoid';
 
 const bookingSchema = new Schema(
     {
@@ -8,7 +8,7 @@ const bookingSchema = new Schema(
         bookNo: {
             type: String,
             required: true,
-            default: () => nanoid(7),
+            // default: () => nanoid(7),
             index: { unique: true },
         },
 

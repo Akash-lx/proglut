@@ -3,6 +3,11 @@ import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const bussinessSchema = new Schema(
     {
+        uniqCode: {
+            type: String,
+            required: true,
+            index: { unique: true },
+        },
         coverImage: {
             type: String, //cloudinary url
             // required: true
@@ -51,7 +56,7 @@ const bussinessSchema = new Schema(
             }
         },
 
-       
+
         amenities: [{
             type: Schema.Types.ObjectId,
             ref: "Domain"
@@ -63,16 +68,16 @@ const bussinessSchema = new Schema(
 
         gallery: [{
             title: {
-                type:String
+                type: String
             },
             image: {
-                type:String
+                type: String
             },
         }],
 
         bussinessHour: [
             {
-               
+
                 title: {
                     type: String,
 
@@ -91,7 +96,7 @@ const bussinessSchema = new Schema(
         ],
         status: {
             type: String,
-            enum: ['pending', 'active', 'in-active','reject','delete'],
+            enum: ['pending', 'active', 'in-active', 'reject', 'delete'],
             default: 'pending',
             index: true
         },
