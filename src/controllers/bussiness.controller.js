@@ -176,7 +176,7 @@ const getBussinessById = asyncHandler(async (req, res) => {
 const updateBussinessInfo = asyncHandler(async (req, res) => {
     try {
 
-        const { Id, title, city, state, street, area, pincode, latitude, longitude, fullAddress, category } = req.body
+        const { Id, title, city, state, street, area, pincode, latitude, longitude, fullAddress, category,description } = req.body
 
         if (!title || !category) {
             throw new ApiError(400, "title and category are required")
@@ -202,8 +202,8 @@ const updateBussinessInfo = asyncHandler(async (req, res) => {
                     address: {
                         city, state, street, area, pincode, latitude, longitude, fullAddress
                     },
-                    domain: category,
-
+                    // domain: category,
+                    description,
                 }
             },
             { new: true }
@@ -357,7 +357,7 @@ const getAllBussiness = asyncHandler(async (req, res) => {
         const query = {}
         if (domain && domain != undefined) { query["domain"] = new mongoose.Types.ObjectId(domain) };
         if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
-        if (status && status != undefined) { query["status"] = status };
+        if (status && status != undefined) { query["status"] = status }else { query["status"] = {$ne:"delete"}};
         if (state && state != undefined) { query["address.state"] = { $regex: `.*${state}.*`, $options: 'i' } };
         if (city && city != undefined) { query["address.city"] = { $regex: `.*${city}.*`, $options: 'i' } };
         if (fromDate && toDate && fromDate != undefined && toDate != undefined) { query["createdAt"] = { "$gte": new Date(fromDate), "$lte": new Date(toDate) } };
@@ -490,27 +490,31 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
                     localField: "_id",
                     foreignField: "bussinessId",
                     as: "bussactivity",
-                    // pipeline: [{
-                    //     $lookup: {
-                    //         from: "slots",
-                    //         localField: "_id",
-                    //         foreignField: "busActId",
-                    //         as: "slots"
-                    //     }
-                    // },
-                    // {
-                    //     "$sort": { "rate": 1 } 
-                    //   },
-                    // {
-                    //     $project: {
-                    //         fullName: 1,
-                    //         profileImage: 1,
-                    //         usertype: 1,
-                    //         status: 1,
-
-                    //     }
-                    // }
-                    // ]
+                    pipeline: [{
+                        $lookup: {
+                            from: "slots",
+                            localField: "_id",
+                            foreignField: "busActId",
+                            as: "slots"
+                        },
+                    }, 
+                    {
+                        $unwind: "$slots" // Unwind the startingAt array to work with its elements
+                      },
+                      {
+                        $group: {
+                          _id: "$_id",
+                          minRate: { $min: "$slots.rate" } // Get the minimum rate from the startingAt array
+                        }
+                      },
+                      {
+                        $project: {
+                          _id: 0,
+                          minRate: 1
+                        }
+                      }
+                   
+                    ]
                 }
             },
 
@@ -530,7 +534,7 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
                     rating: {
                         $avg: "$reviews.rating"
                     },
-
+                    startingAt: { $first: "$bussactivity.minRate" },
                 }
             },
             {
@@ -545,7 +549,7 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
                     status: 1,
                     rating: 1,
                     reviewcount: 1,
-                    // bussactivity:1,
+                    startingAt:1,
                 }
             }, { $sort: { _id: -1 } },
             { $skip: parseInt(startIndex) },

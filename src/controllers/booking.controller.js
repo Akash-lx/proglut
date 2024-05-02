@@ -67,13 +67,13 @@ const getBusBookingById = asyncHandler(async (req, res) => {
         const booking = await Booking.findById(Id)
             .populate('owner', 'fullName profileImage usertype status')
             .populate('bussinessId', 'title brandLogo coverImage address')
-            .populate('addonItems.itemId', 'title')
-            .populate('addonFoods.itemId', 'title')
+            .populate('addonItems.itemId', 'title image')
+            .populate('addonFoods.itemId', 'title image')
             .populate({
                 path: 'activities.busActivityId',
                 populate: {
                     path: 'activityId',
-                    select: 'title'
+                    select: 'title image'
                 },
 
             })
@@ -360,7 +360,7 @@ const getAllBusBooking = asyncHandler(async (req, res) => {
 
         if (bussinessId && bussinessId != undefined) { query["bussinessId"] = new mongoose.Types.ObjectId(bussinessId) };
         if (userId && userId != undefined) { query["owner"] = new mongoose.Types.ObjectId(userId) };
-        if (status && status != undefined) { query["status"] = status };
+        if (status && status != undefined) { query["status"] = status }else { query["status"] = {$ne:"delete"}};
         // if (search_in && search_in != undefined) { bussinesQuery["bookNo"] = {$regex: `.*${search_in}.*`,$options:'i'} };
         if (activityId && activityId != undefined) { activi["activityId"] = activityId };
 
@@ -757,7 +757,7 @@ const getAllEvtBooking = asyncHandler(async (req, res) => {
 
         if (eventId && eventId != undefined) { query["eventId"] = new mongoose.Types.ObjectId(eventId) };
         if (userId && userId != undefined) { query["owner"] = new mongoose.Types.ObjectId(userId) };
-        if (status && status != undefined) { query["status"] = status };
+        if (status && status != undefined) { query["status"] = status }else { query["status"] = {$ne:"delete"}};;
         // if (search_in && search_in != undefined) { bussinesQuery["bookNo"] = {$regex: `.*${search_in}.*`,$options:'i'} };
       
         if (vendorId && vendorId != undefined) { eventQuery["owner"] = new mongoose.Types.ObjectId(vendorId)};

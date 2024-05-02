@@ -275,7 +275,7 @@ const getActivitySlots = asyncHandler(async (req, res) => {
         const query = {}
         query['busActId'] = new mongoose.Types.ObjectId(bussActivityId)
         if (day && day != undefined) { query["days"] = day };
-
+        query["status"] = {$ne:"delete"};
         const slotlist = await Slots.find(query)
 
         if (slotlist.length == 0) {

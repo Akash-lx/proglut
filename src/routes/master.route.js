@@ -11,7 +11,14 @@ import {
     uploadfileSetting,
     getApplicationSetting,
     addImageMaster,
-updateImageMaster,
+    updateImageMaster,
+    getComplaints,
+    addComplaint,
+    updateStatusComplaint,
+    getNotifications,
+    addNotification,
+    updateStatusNotification,
+    deleteNotification
 } from "../controllers/master.controller.js"
 import { verifyVendorJWT } from "../middlewares/auth.middleware.js"
 import { adminUpload } from '../middlewares/multer.middleware.js';
@@ -33,8 +40,8 @@ router
 router.route("/unit/active").get(getActiveMaster);
 
 router.route("/banner/").get(getAllMaster)
-    .post(domainUpload.single("image"),addImageMaster)
-    .patch(domainUpload.single("image"),updateImageMaster);
+    .post(domainUpload.single("image"), addImageMaster)
+    .patch(domainUpload.single("image"), updateImageMaster);
 
 router
     .route("/banner/detail")
@@ -45,8 +52,8 @@ router
 router.route("/banner/active").get(getActiveMaster);
 
 router.route("/advertise/").get(getAllMaster)
-    .post(domainUpload.single("image"),addImageMaster)
-    .patch(domainUpload.single("image"),updateImageMaster);
+    .post(domainUpload.single("image"), addImageMaster)
+    .patch(domainUpload.single("image"), updateImageMaster);
 
 router
     .route("/advertise/detail")
@@ -55,6 +62,17 @@ router
 // .delete(deleteMaster)
 
 router.route("/advertise/active").get(getActiveMaster);
+
+router.route("/complaint")
+    .get(getComplaints)
+    .post(addComplaint)
+    .patch(updateStatusComplaint);
+
+router.route("/notification")
+    .get(getNotifications)
+    .post(addNotification)
+    .patch(updateStatusNotification)
+    .delete(deleteNotification);
 
 
 

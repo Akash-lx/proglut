@@ -530,7 +530,7 @@ const getVendorsList = asyncHandler(async (req, res) => {
 
         const query = {}
         query["usertype"] = usertype;
-        if (status && status != undefined) { query["status"] = status };
+        if (status && status != undefined) { query["status"] = status }else { query["status"] = {$ne:"delete"}};
         if (fromDate && toDate && fromDate != undefined && toDate != undefined) { query["createdAt"] = { "$gte": fromDate, "$lte": toDate } };
         if (state && state != undefined) { bussinesQuery["address.state"] = { $regex: `.*${state}.*`, $options: 'i' } };
         if (city && city != undefined) { bussinesQuery["address.city"] = { $regex: `.*${city}.*`, $options: 'i' } };

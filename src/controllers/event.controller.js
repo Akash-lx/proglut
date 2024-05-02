@@ -220,39 +220,53 @@ const updateEventlogo = asyncHandler(async (req, res) => {
 })
 
 const updateStatusEvent = asyncHandler(async (req, res) => {
-    const { Id, status } = req.query
-    if (!Id || !status) {
+    try {
+        const { Id, status } = req.query
+        if (!Id || !status) {
+            return res
+                .status(400)
+                .json(new ApiError(400, "Id and status are required"))
+        }
+
+        const event = await Event.findByIdAndUpdate(
+            Id,
+            {
+                $set: {
+                    status
+                }
+            },
+            { new: true }
+        ).select()
+
+        if (!event) {
+            throw new ApiError(500, `Something went wrong while updating event`)
+        }
+
         return res
-            .status(400)
-            .json(new ApiError(400, "Id and status are required"))
+            .status(200)
+            .json(
+                new ApiResponse(200, event, `Event Status updated successfully`)
+            )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in update status event'))
     }
-
-    const event = await Event.findByIdAndUpdate(
-        Id,
-        {
-            $set: {
-                status: !status
-            }
-        },
-        { new: true }
-    ).select()
-
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(200, event, `event Status updated successfully`)
-        )
 })
 
 
 const getAllEvent = asyncHandler(async (req, res) => {
     try {
-        const { limit = 200, startIndex = 0, bussinessId, vendorId, status } = req.query
+        const { limit = 200, startIndex = 0, bussinessId, vendorId, status, state, city, fromDate, toDate ,hostName } = req.query
 
         const query = {}
         if (bussinessId && bussinessId != undefined) { query["bussinessId"] = new mongoose.Types.ObjectId(bussinessId) };
         if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
-        if (status && status != undefined) { query["status"] = status };
+        if (status && status != undefined) { query["status"] = status }else { query["status"] = {$ne:"delete"}};
+        if (state && state != undefined) { query["address.state"] = { $regex: `.*${state}.*`, $options: 'i' } };
+        if (city && city != undefined) { query["address.city"] = { $regex: `.*${city}.*`, $options: 'i' } };
+        if (hostName && hostName != undefined) { query["hostName"] = { $regex: `.*${hostName}.*`, $options: 'i' } };
+        if (fromDate && toDate && fromDate != undefined && toDate != undefined) { query["dateTime.startDate"] = { "$gte": new Date(fromDate), "$lte": new Date(toDate) } };
         // console.log(query);
         const event = await Event.aggregate([
             {
@@ -350,11 +364,14 @@ const getAllEvent = asyncHandler(async (req, res) => {
 const getActiveEvent = asyncHandler(async (req, res) => {
 
     try {
-        const { limit = 200, startIndex = 0, bussinessId, vendorId } = req.query
+        const { limit = 200, startIndex = 0, bussinessId, vendorId,state, city,hostName } = req.query
 
         const query = {}
         if (bussinessId && bussinessId != undefined) { query["bussinessId"] = new mongoose.Types.ObjectId(bussinessId) };
         if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
+        if (state && state != undefined) { query["address.state"] = { $regex: `.*${state}.*`, $options: 'i' } };
+        if (city && city != undefined) { query["address.city"] = { $regex: `.*${city}.*`, $options: 'i' } };
+        if (hostName && hostName != undefined) { query["hostName"] = { $regex: `.*${hostName}.*`, $options: 'i' } };
         query["status"] = "active";
         // console.log(query);
         const event = await Event.aggregate([
@@ -576,7 +593,7 @@ const getPackages = asyncHandler(async (req, res) => {
             throw new ApiError(400, `EventId is required`)
         }
 
-        const slotlist = await Activities.find({eventId})
+        const slotlist = await Activities.find({eventId:eventId,status:{$ne:"delete"}})
 
 
         if (slotlist.length == 0) {
