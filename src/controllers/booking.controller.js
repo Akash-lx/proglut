@@ -21,14 +21,14 @@ const addBussBookingInfo = asyncHandler(async (req, res) => {
         const prvendor = await Booking.findOne().sort({ _id: -1 }).select('bookNo').exec();
         let bookNo = '';
         if (prvendor?.bookNo) {
-           let codes = prvendor.bookNo.substring(8)
-           let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
-        //    console.log(datef);
-            bookNo = `PG${datef}${(parseInt(codes)+1).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+            let codes = prvendor.bookNo.substring(8)
+            let datef = new Date().toISOString().slice(2, 10).replace(/-/g, "");
+            //    console.log(datef);
+            bookNo = `PG${datef}${(parseInt(codes) + 1).toLocaleString(undefined, { useGrouping: false, minimumIntegerDigits: 4 })}`;
         } else {
             let codes = 1;
-            let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
-            bookNo = `PG${datef}${(parseInt(codes)).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+            let datef = new Date().toISOString().slice(2, 10).replace(/-/g, "");
+            bookNo = `PG${datef}${(parseInt(codes)).toLocaleString(undefined, { useGrouping: false, minimumIntegerDigits: 4 })}`;
         }
 
         const booking = await Booking.create({
@@ -360,7 +360,7 @@ const getAllBusBooking = asyncHandler(async (req, res) => {
 
         if (bussinessId && bussinessId != undefined) { query["bussinessId"] = new mongoose.Types.ObjectId(bussinessId) };
         if (userId && userId != undefined) { query["owner"] = new mongoose.Types.ObjectId(userId) };
-        if (status && status != undefined) { query["status"] = status }else { query["status"] = {$ne:"delete"}};
+        if (status && status != undefined) { query["status"] = status } else { query["status"] = { $ne: "delete" } };
         // if (search_in && search_in != undefined) { bussinesQuery["bookNo"] = {$regex: `.*${search_in}.*`,$options:'i'} };
         if (activityId && activityId != undefined) { activi["activityId"] = activityId };
 
@@ -560,6 +560,54 @@ const deleteBusBooking = asyncHandler(async (req, res) => {
     //TODO: delete video
 })
 
+const updateBookActStatus = asyncHandler(async (req, res) => {
+    try {
+        const { bookingId, Id, type, status } = req.body
+        if (!bookingId || !Id || !status || !type) {
+            throw new ApiError(400, "All Fields are required")
+        }
+        let actibook = {};
+
+        if (type == 1) {
+            actibook = await Booking.updateOne(
+                { _id: bookingId, activities: { $elemMatch: { _id: { $eq: new mongoose.Types.ObjectId(Id) } } } },
+                {
+                    $set: {
+                        "activities.$.status": status
+                    }
+
+                }, { new: true })
+        } else if (type == 2) {
+            actibook = await Booking.updateOne(
+                { _id: bookingId, addonItems: { $elemMatch: { _id: { $eq: new mongoose.Types.ObjectId(Id) } } } },
+                {
+                    $set: {
+                        "addonItems.$.status": status
+                    }
+
+                }, { new: true })
+        } else if (type == 3) {
+            actibook = await Booking.updateOne(
+                { _id: bookingId, addonFoods: { $elemMatch: { _id: { $eq: new mongoose.Types.ObjectId(Id) } } } },
+                {
+                    $set: {
+                        "addonFoods.$.status": status
+                    }
+
+                }, { new: true })
+        }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, actibook, `booking Activity Status updated successfully`)
+            )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in Booking status'))
+    }
+})
 // Bussiness booking apis ////
 
 // Event booking apis ////
@@ -574,14 +622,14 @@ const addEvtBookingInfo = asyncHandler(async (req, res) => {
         const prvendor = await EventBooking.findOne().sort({ _id: -1 }).select('bookNo').exec();
         let bookNo = '';
         if (prvendor?.bookNo) {
-           let codes = prvendor.bookNo.substring(8)
-           let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
-        //    console.log(datef);
-            bookNo = `PG${datef}${(parseInt(codes)+1).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+            let codes = prvendor.bookNo.substring(8)
+            let datef = new Date().toISOString().slice(2, 10).replace(/-/g, "");
+            //    console.log(datef);
+            bookNo = `PG${datef}${(parseInt(codes) + 1).toLocaleString(undefined, { useGrouping: false, minimumIntegerDigits: 4 })}`;
         } else {
             let codes = 1;
-            let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
-            bookNo = `PG${datef}${(parseInt(codes)).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+            let datef = new Date().toISOString().slice(2, 10).replace(/-/g, "");
+            bookNo = `PG${datef}${(parseInt(codes)).toLocaleString(undefined, { useGrouping: false, minimumIntegerDigits: 4 })}`;
         }
 
         const evtBooking = await EventBooking.create({
@@ -748,19 +796,19 @@ const updateEvtStatusBooking = asyncHandler(async (req, res) => {
 
 const getAllEvtBooking = asyncHandler(async (req, res) => {
     try {
-        const { limit = 200, startIndex = 0, fromDate, toDate, eventId, userId, status, vendorId, state, city,hostName } = req.query
+        const { limit = 200, startIndex = 0, fromDate, toDate, eventId, userId, status, vendorId, state, city, hostName } = req.query
         const query = {}
         const eventQuery = {}
         const bookingFdata = []
-       
+
         if (fromDate && toDate && fromDate != undefined && toDate != undefined) { query["fromdate"] = { $gte: fromDate, $lte: toDate } };
 
         if (eventId && eventId != undefined) { query["eventId"] = new mongoose.Types.ObjectId(eventId) };
         if (userId && userId != undefined) { query["owner"] = new mongoose.Types.ObjectId(userId) };
-        if (status && status != undefined) { query["status"] = status }else { query["status"] = {$ne:"delete"}};;
+        if (status && status != undefined) { query["status"] = status } else { query["status"] = { $ne: "delete" } };;
         // if (search_in && search_in != undefined) { bussinesQuery["bookNo"] = {$regex: `.*${search_in}.*`,$options:'i'} };
-      
-        if (vendorId && vendorId != undefined) { eventQuery["owner"] = new mongoose.Types.ObjectId(vendorId)};
+
+        if (vendorId && vendorId != undefined) { eventQuery["owner"] = new mongoose.Types.ObjectId(vendorId) };
         if (state && state != undefined) { eventQuery["address.state"] = { $regex: `.*${state}.*`, $options: 'i' } };
         if (city && city != undefined) { eventQuery["address.city"] = { $regex: `.*${city}.*`, $options: 'i' } };
         if (hostName && hostName != undefined) { eventQuery["hostName"] = { $regex: `.*${hostName}.*`, $options: 'i' } };
@@ -799,12 +847,12 @@ const getAllEvtBooking = asyncHandler(async (req, res) => {
                         {
                             "$match": eventQuery
                         }, {
-                        $project: {
-                            title: 1,
-                            hostName: 1,
-                            dateTime: 1,
+                            $project: {
+                                title: 1,
+                                hostName: 1,
+                                dateTime: 1,
+                            }
                         }
-                    }
                     ]
                 },
             },
@@ -934,12 +982,12 @@ const getMyEvtBooking = asyncHandler(async (req, res) => {
                     {
                         "$match": query2
                     }, {
-                    $project: {
-                        title: 1,
-                        hostName: 1,
-                        dateTime: 1,
+                        $project: {
+                            title: 1,
+                            hostName: 1,
+                            dateTime: 1,
+                        }
                     }
-                }
                 ]
             },
         },
@@ -1033,6 +1081,7 @@ export {
     getAllBusBooking,
     getMyBusBooking,
     deleteBusBooking,
+    updateBookActStatus,
 
     addEvtBookingInfo,
     getEvtBookingById,

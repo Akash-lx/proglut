@@ -8,6 +8,7 @@ import {
     getAllBusBooking,
     getMyBusBooking,
     deleteBusBooking,
+    updateBookActStatus,
     addEvtBookingInfo,
     getEvtBookingById,
     updateEvtBookingInfo,
@@ -33,6 +34,7 @@ router
 // .delete(deleteBooking)
 
 router.route("/payment").patch(updateBusBookingPayment);
+router.route("/business/activity").patch(updateBookActStatus);
 router.route("/business/my").get(verifyVendorJWT, getMyBusBooking);
 
 
