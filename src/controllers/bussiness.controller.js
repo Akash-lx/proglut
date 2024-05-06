@@ -146,6 +146,7 @@ const getBussinessById = asyncHandler(async (req, res) => {
             },
             {
                 $project: {
+                    uniqCode:1,
                     coverImage: 1,
                     brandLogo: 1,
                     title: 1,
@@ -432,6 +433,7 @@ const getAllBussiness = asyncHandler(async (req, res) => {
             },
             {
                 $project: {
+                    uniqCode:1,
                     coverImage: 1,
                     brandLogo: 1,
                     title: 1,
@@ -542,6 +544,7 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
             },
             {
                 $project: {
+                    uniqCode:1,
                     coverImage: 1,
                     brandLogo: 1,
                     title: 1,
@@ -605,6 +608,7 @@ const getMyBussiness = asyncHandler(async (req, res) => {
             },
             {
                 $project: {
+                    uniqCode:1,
                     coverImage: 1,
                     brandLogo: 1,
                     title: 1,

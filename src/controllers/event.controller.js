@@ -327,6 +327,7 @@ const getAllEvent = asyncHandler(async (req, res) => {
             },
             {
                 $project: {
+                    uniqCode:1,
                     coverImages: 1,
                     title: 1,
                     address: 1,
@@ -415,6 +416,7 @@ const getActiveEvent = asyncHandler(async (req, res) => {
             },
             {
                 $project: {
+                    uniqCode:1,
                     coverImages: 1,
                     title: 1,
                     address: 1,
@@ -495,6 +497,7 @@ const getMyEvent = asyncHandler(async (req, res) => {
             },
             {
                 $project: {
+                    uniqCode:1,
                     coverImages: 1,
                     title: 1,
                     address: 1,
