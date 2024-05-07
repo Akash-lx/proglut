@@ -5,6 +5,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken"
 import fs from "fs"
 import mongoose from "mongoose";
+import SendSms from "../utils/SendSms.js";
+
 
 const generateWebAccessToken = async (vendorId) => {
     try {
@@ -66,14 +68,14 @@ const registerVendor = asyncHandler(async (req, res) => {
         const prvendor = await Vendor.findOne({ usertype }).sort({ _id: -1 }).select('uniqCode').exec();
         let uniqCode = '';
         if (prvendor?.uniqCode) {
-           let codes = prvendor.uniqCode.substring(9)
-           let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
-        //    console.log(datef);
-            uniqCode = `${usertype == "user" ?"PGC" :"PGP"}${datef}${(parseInt(codes)+1).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+            let codes = prvendor.uniqCode.substring(9)
+            let datef = new Date().toISOString().slice(2, 10).replace(/-/g, "");
+            //    console.log(datef);
+            uniqCode = `${usertype == "user" ? "PGC" : "PGP"}${datef}${(parseInt(codes) + 1).toLocaleString(undefined, { useGrouping: false, minimumIntegerDigits: 4 })}`;
         } else {
             let codes = 1;
-            let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
-            uniqCode = `${usertype == "user" ?"PGC" :"PGP"}${datef}${(parseInt(codes)).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+            let datef = new Date().toISOString().slice(2, 10).replace(/-/g, "");
+            uniqCode = `${usertype == "user" ? "PGC" : "PGP"}${datef}${(parseInt(codes)).toLocaleString(undefined, { useGrouping: false, minimumIntegerDigits: 4 })}`;
         }
         // console.log(prvendor)
         // console.log(uniqCode)
@@ -160,12 +162,26 @@ const sendOTP = asyncHandler(async (req, res) => {
             throw new ApiError(403, `${usertype} is ${vendor.status} ! please contact admin`)
         }
 
+        let otp = Math.floor((Math.random() * 1000000) + 1);
+        let msg = `Dear User,${otp} is your verification OTP code to log in to the PROGLUT app.`;
+        let msgId = "1707171480148168243";
+
+        const msgSend = await SendSms(msg, msgId, mobile);
+// console.log(msgSend);
+        if(msgSend){
+            if(msgSend.return == false){
+                throw new ApiError(500, msgSend.message[0])
+            }
+        }
+        // if(!msgSend.return){
+        //     throw new ApiError(500, msgSend.message[0])
+        // }
 
         const newvendor = await Vendor.findByIdAndUpdate(
             vendor?._id,
             {
                 $set: {
-                    otp: 123456,
+                    otp: otp,
                 }
             },
             { new: true }
@@ -530,7 +546,7 @@ const getVendorsList = asyncHandler(async (req, res) => {
 
         const query = {}
         query["usertype"] = usertype;
-        if (status && status != undefined) { query["status"] = status }else { query["status"] = {$ne:"delete"}};
+        if (status && status != undefined) { query["status"] = status } else { query["status"] = { $ne: "delete" } };
         if (fromDate && toDate && fromDate != undefined && toDate != undefined) { query["createdAt"] = { "$gte": fromDate, "$lte": toDate } };
         if (state && state != undefined) { bussinesQuery["address.state"] = { $regex: `.*${state}.*`, $options: 'i' } };
         if (city && city != undefined) { bussinesQuery["address.city"] = { $regex: `.*${city}.*`, $options: 'i' } };
@@ -720,6 +736,44 @@ const updateVendorDetail = asyncHandler(async (req, res) => {
         if (!vendor) {
             throw new ApiError(500, `Something went wrong while UpdateInfo the ${usertype}`)
         }
+
+        return res
+            .status(200)
+            .json(new ApiResponse(200, vendor, `${usertype} details updated successfully`))
+
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in UpdateInfo'))
+    }
+});
+
+const mailtesting = asyncHandler(async (req, res) => {
+
+    try {
+      
+        var transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+              user: 'youremail@gmail.com',
+              pass: 'yourpassword'
+            }
+          });
+          
+          var mailOptions = {
+            from: 'youremail@gmail.com',
+            to: 'myfriend@yahoo.com',
+            subject: 'Sending Email using Node.js',
+            text: 'That was easy!'
+          };
+          
+          transporter.sendMail(mailOptions, function(error, info){
+            if (error) {
+              console.log(error);
+            } else {
+              console.log('Email sent: ' + info.response);
+            }
+          });
 
         return res
             .status(200)
