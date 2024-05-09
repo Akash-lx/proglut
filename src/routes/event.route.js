@@ -15,6 +15,7 @@ import {
     updatePackage,
     updatePackageStatus,
     addRules,
+    getAllEventList,
 } from "../controllers/event.controller.js"
 import { verifyVendorJWT } from "../middlewares/auth.middleware.js"
 import { bussinessUpload } from "../middlewares/multer.middleware.js"
@@ -35,6 +36,7 @@ router
 // .delete(deleteEvent)
 
 router.route("/active").get(getActiveEvent);
+router.route("/list").get(getAllEventList);
 router.route("/my").get(verifyVendorJWT, getMyEvent);
 
 router.route("/aminities/").post(verifyVendorJWT, addAminities);

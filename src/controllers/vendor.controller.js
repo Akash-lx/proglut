@@ -6,6 +6,13 @@ import jwt from "jsonwebtoken"
 import fs from "fs"
 import mongoose from "mongoose";
 import SendSms from "../utils/SendSms.js";
+import Sendmail from "../utils/Sendmail.js";
+
+// import fireadmin from "firebase-admin";
+// import fcm from 'fcm-notification';
+// var serviceAccount = require("../config/privateKey.json");
+// const certPath = fireadmin.credential.cert(serviceAccount);
+// var FCM = new fcm(certPath);
 
 
 const generateWebAccessToken = async (vendorId) => {
@@ -167,9 +174,9 @@ const sendOTP = asyncHandler(async (req, res) => {
         let msgId = "1707171480148168243";
 
         const msgSend = await SendSms(msg, msgId, mobile);
-// console.log(msgSend);
-        if(msgSend){
-            if(msgSend.return == false){
+        // console.log(msgSend);
+        if (msgSend) {
+            if (msgSend.return == false) {
                 throw new ApiError(500, msgSend.message[0])
             }
         }
@@ -539,6 +546,42 @@ const updateVendorStatus = asyncHandler(async (req, res) => {
     }
 })
 
+const updatefcmCode = asyncHandler(async (req, res) => {
+    try {
+        const usertype = req.path.split("/")[1];
+        const {fcmId } = req.body
+
+        if (!fcmId) {
+            throw new ApiError(400, "fcmId is required")
+        }
+
+        const vendor = await Vendor.findOneAndUpdate(
+           {_id:req.vendor._id, usertype:usertype} ,
+            {
+                $set: {
+                    fcmId: fcmId
+                }
+            },
+            { new: true }
+        ).select("-otp -refreshToken")
+
+        if (!vendor) {
+            throw new ApiError(500, `Something went wrong while fcm update in ${usertype}`)
+        }
+
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, vendor, `${usertype} Fcm updated successfully`)
+            )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in UpdateInfo'))
+    }
+})
+
 const getVendorsList = asyncHandler(async (req, res) => {
     try {
         const usertype = req.path.split("/")[1];
@@ -567,6 +610,32 @@ const getVendorsList = asyncHandler(async (req, res) => {
 
         }
 
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, vendor, `${usertype} List Fetched successfully`)
+            )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in UpdateInfo'))
+    }
+})
+
+const getVendorsTitle = asyncHandler(async (req, res) => {
+    try {
+        const usertype = req.path.split("/")[1];
+      
+        const vendor = await Vendor.find({usertype:usertype,status:"active"})
+            .select("uniqCode mobile fullName").exec();
+
+        if (!vendor) {
+            throw new ApiError(500, `Something went wrong while fetching ${usertype} list`)
+        } else if (vendor.length == 0) {
+            throw new ApiError(404, `Data Not Found ! ${usertype} list is empty`)
+
+        }
 
         return res
             .status(200)
@@ -751,33 +820,75 @@ const updateVendorDetail = asyncHandler(async (req, res) => {
 const mailtesting = asyncHandler(async (req, res) => {
 
     try {
-      
-        var transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-              user: 'youremail@gmail.com',
-              pass: 'yourpassword'
-            }
-          });
-          
-          var mailOptions = {
-            from: 'youremail@gmail.com',
-            to: 'myfriend@yahoo.com',
-            subject: 'Sending Email using Node.js',
-            text: 'That was easy!'
-          };
-          
-          transporter.sendMail(mailOptions, function(error, info){
-            if (error) {
-              console.log(error);
-            } else {
-              console.log('Email sent: ' + info.response);
-            }
-          });
-
+        let subject = "testing mailer one again";
+        let body = `<body>
+<section>
+    <div class="row">
+        <div class="col-lg-3">
+        
+        </div>
+        <div class="col-lg-6" style="background: #6f42c1; color: white;">
+            <!-- <img src="https://logixcard.com/doctro/assets/img/enso_logo.png" alt="Enso Innovation LAB" class="img=fluid"/> -->
+        </div>
+        <div class="col-lg-3">
+        
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-3">
+        
+        </div>
+        <div class="col-lg-6">
+            <p style="padding: 12px; !important;"><b>Dear Partner,</b></p>
+            <p style="font-weight: 600;padding: 12px;">Welcome to PropSun Loans.You can now download our Android App from Play Store click link below</p>
+            <p style="font-weight: 600;padding: 12px;"><a href="https://drive.google.com/file/d/1RgJVF8Jx2gDlTHZmYdIGf_OD9it1PaAg/view?usp=drivesdk" style="text-decoration: none;" class="btn btn-info"> Click Here</a></p>
+            <p style="font-weight: 600;padding: 12px;">The Login ID to access your account is your Mobile number and default Password is <?php echo $agent_password;?> You can change this Password.</p>
+        </div>
+        <div class="col-lg-3">
+        
+        </div>
+    </div>
+    <br>
+    <br>
+    <!-- <div class="row">
+        <div class="col-lg-3">
+        
+        </div>
+        <div class="col-lg-6">
+            <div style="width:140px; display:flex; font-size: 110%;">
+                <div style="height: 40px; width: 40px; display: flex; background: #59359a; border-radius: 50%;" class="align-items-center justify-content-center">
+                    <a href="#" style="text-decoration: none; color: white;"><i class="fa fa-facebook"></i></a>
+                </div>
+                <div style="height: 40px; width: 40px; display: flex; background: #59359a; border-radius: 50%;" class="align-items-center justify-content-center mx-2">
+                    <a href="#" style="text-decoration: none; color: white;"><i class="fa fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+        
+        </div>
+    </div> -->
+    <div class="row">
+        <div class="col-lg-3">
+        
+        </div>
+        <div class="col-lg-6">
+            <p class="small">&copy;2021 PropSun Loan. All rights reserved.</p>
+        </p>
+        </div>
+        <div class="col-lg-3">
+        
+        </div>
+    </div>
+</section>
+</body>`;
+        let email = "akash.logixhunt@gmail.com";
+        const mailsend = await Sendmail(email, subject, body)
+  
         return res
             .status(200)
-            .json(new ApiResponse(200, vendor, `${usertype} details updated successfully`))
+            .json(new ApiResponse(200, null, `details updated successfully`))
 
     } catch (error) {
         return res
@@ -785,6 +896,41 @@ const mailtesting = asyncHandler(async (req, res) => {
             .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in UpdateInfo'))
     }
 });
+
+// const pushnotificationTest = asyncHandler(async (req, res) => {
+
+//     try {
+//         let title = "testing push one again";
+//         let body = "testing push one again body";
+//         let fcm_token = "akash.logixhunt@gmail.com";
+//         let message = {
+//             android: {
+//                 notification: {
+//                     title: title,
+//                     body: body,
+//                 },
+//             },
+//             token: fcm_token
+//         };
+
+//         FCM.send(message, function(err, resp) {
+//             if(err){
+//                 throw err;
+//             }else{
+//                 console.log('Successfully sent notification');
+//             }
+//         });
+  
+//         return res
+//             .status(200)
+//             .json(new ApiResponse(200, null, `details updated successfully`))
+
+//     } catch (error) {
+//         return res
+//             .status(error.statusCode || 500)
+//             .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in UpdateInfo'))
+//     }
+// });
 
 export {
     registerVendor,
@@ -803,6 +949,9 @@ export {
     getVendorDetail,
     updateVendorDetail,
     updateVendorAddress,
+    updatefcmCode,
+    getVendorsTitle,
+    mailtesting,
     // getVendorChannelProfile,
     // getWatchHistory
 }

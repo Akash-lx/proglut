@@ -7,7 +7,7 @@ const vendorSchema = new Schema(
         uniqCode: {
             type: String,
             required: true,
-          },
+        },
 
         email: {
             type: String,
@@ -35,22 +35,21 @@ const vendorSchema = new Schema(
 
         gender: {
             type: String,
-            enum: ["male", "female","other"],
+            enum: ["male", "female", "other"],
             default: "male",
             required: true,
             trim: true,
             index: true
         },
 
-        
+
         profileImage: {
             type: String, // cloudinary url
         },
-        
-        // parentId: {
-        //     type: Schema.Types.ObjectId,
-        //     ref: "User"
-        // },
+
+        fcmId: {
+            type: String,
+        },
 
         address:
         {
@@ -59,11 +58,11 @@ const vendorSchema = new Schema(
             },
             state: {
                 type: String,
-              
+
             },
             street: {
                 type: String,
-              
+
             },
             area: {
                 type: String,
@@ -81,11 +80,11 @@ const vendorSchema = new Schema(
         ,
         otp: {
             type: Number,
-            
+
         },
         password: {
             type: String,
-            
+
         },
 
         usertype: {
@@ -96,7 +95,7 @@ const vendorSchema = new Schema(
 
         status: {
             type: String,
-            enum: ['active', 'inactive', 'block','delete'],
+            enum: ['active', 'inactive', 'block', 'delete'],
             default: 'active',
             index: true
         },

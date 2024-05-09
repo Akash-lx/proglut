@@ -114,6 +114,14 @@ const bookingSchema = new Schema(
             },
         ],
 
+        totalCharge: {
+            type: Number,
+            default:0,
+        },
+        totalDiscount: {
+            type: Number,
+            default:0,
+        },
         totalPayable: {
             type: Number,
             required: true
@@ -130,10 +138,13 @@ const bookingSchema = new Schema(
             type: String,
 
         },
+        couponId: {
+            type: Schema.Types.ObjectId,
+            ref: "Coupon",
+        },
         bussinessId: {
             type: Schema.Types.ObjectId,
             ref: "Bussiness",
-
         },
         owner: {
             type: Schema.Types.ObjectId,

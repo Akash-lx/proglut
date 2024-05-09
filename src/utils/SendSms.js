@@ -1,32 +1,37 @@
 // import React from 'react'
-// import { ApiError } from './ApiError';
-import unirest from "unirest";
+import { ApiError } from './ApiError.js';
+import axios from "axios";
 
 const SendSms = async (msg, msgId, mobile) => {
-    let req = await unirest("POST", "https://www.fast2sms.com/dev/bulkV2");
 
+    try {
+        const formData = new FormData();
+        formData.append('authorization', 'X7GPJh1SjYi9tBmayDIrn8LFOqwHlgsWx3CfUbRKue5kMNT4EzcpSiVFvalN5DQGhIEROCn0Tex89jzf');
+        formData.append('sender_id', 'PROGLT');
+        formData.append('message', msg);
+        formData.append('template_id', msgId);
+        formData.append('entity_id', '1701171464892713970');
+        formData.append('route', 'dlt_manual');
+        formData.append('numbers', mobile);
 
-    req.headers({
-        "authorization": "X7GPJh1SjYi9tBmayDIrn8LFOqwHlgsWx3CfUbRKue5kMNT4EzcpSiVFvalN5DQGhIEROCn0Tex89jzf"
-    });
+        const req = await axios.post('https://www.fast2sms.com/dev/bulkV2', formData, {
+            headers: {
+                "authorization": "X7GPJh1SjYi9tBmayDIrn8LFOqwHlgsWx3CfUbRKue5kMNT4EzcpSiVFvalN5DQGhIEROCn0Tex89jzf"
+            }
+        });
 
-    req.form({
-        "authorization": "X7GPJh1SjYi9tBmayDIrn8LFOqwHlgsWx3CfUbRKue5kMNT4EzcpSiVFvalN5DQGhIEROCn0Tex89jzf",
-        "sender_id": "PROGLT",
-        "message": msg,
-        "template_id": msgId,
-        "entity_id": "1701171464892713970",
-        "route": "dlt_manual",
-        "numbers": mobile,
-    });
-
-    req.end(function (res) {
-        if (res.error){
-            return res.error;
+        if(req){
+            return req.data;
+        }else {
+            return req.data;
+            // throw new ApiError(500,'Server Error in SendSms funcation',req.data)
         }
-        // console.log(res.body);
-        return res.body;
-    });
+
+    } catch (error) {
+        // console.log(error);
+        throw new ApiError(error.statusCode || 500, error.message || 'Server Error in SmsSend')
+    }
+
 }
 
 export default SendSms

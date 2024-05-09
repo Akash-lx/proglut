@@ -351,7 +351,7 @@ const updateBusStatusBooking = asyncHandler(async (req, res) => {
 
 const getAllBusBooking = asyncHandler(async (req, res) => {
     try {
-        const { limit = 200, startIndex = 0, search_in, domain, vendorId, status, userId, bussinessId, fromDate, toDate, activityId, state, city } = req.query
+        const { limit = 200, startIndex = 0, domain, vendorId, status, userId, bussinessId, fromDate, toDate, activityId, state, city } = req.query
         const query = {}
         const bussinesQuery = {}
         const activi = {}
@@ -383,7 +383,7 @@ const getAllBusBooking = asyncHandler(async (req, res) => {
                 },
 
             })
-            .sort("-_id")
+            .sort({_id:-1})
             .skip(parseInt(startIndex))
             .limit(parseInt(limit)).exec();
 

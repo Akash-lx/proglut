@@ -20,6 +20,7 @@ import {
     getGallery,
     addGallery,
     deleteGallery,
+    getAllBussinessList,
 } from "../controllers/bussiness.controller.js"
 import { verifyVendorJWT } from "../middlewares/auth.middleware.js"
 import { bussinessUpload } from "../middlewares/multer.middleware.js"
@@ -49,6 +50,7 @@ router
     .patch(updateStatusBussiness);
 // .delete(deleteBussiness)
 
+router.route("/list").get(getAllBussinessList);
 router.route("/active").get(getActiveBussiness);
 router.route("/my").get(verifyVendorJWT, getMyBussiness);
 

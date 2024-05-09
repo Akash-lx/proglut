@@ -28,14 +28,14 @@ const addBussinessInfo = asyncHandler(async (req, res) => {
         const prvendor = await Bussiness.findOne().sort({ _id: -1 }).select('uniqCode').exec();
         let uniqCode = '';
         if (prvendor?.uniqCode) {
-           let codes = prvendor.uniqCode.substring(9)
-           let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
-        //    console.log(codes);
-            uniqCode = `PGB${datef}${(parseInt(codes)+1).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+            let codes = prvendor.uniqCode.substring(9)
+            let datef = new Date().toISOString().slice(2, 10).replace(/-/g, "");
+            //    console.log(codes);
+            uniqCode = `PGB${datef}${(parseInt(codes) + 1).toLocaleString(undefined, { useGrouping: false, minimumIntegerDigits: 4 })}`;
         } else {
             let codes = 1;
-            let datef = new Date().toISOString().slice(2,10).replace(/-/g,"");
-            uniqCode = `PGB${datef}${(parseInt(codes)).toLocaleString(undefined, {useGrouping: false, minimumIntegerDigits: 4})}`;
+            let datef = new Date().toISOString().slice(2, 10).replace(/-/g, "");
+            uniqCode = `PGB${datef}${(parseInt(codes)).toLocaleString(undefined, { useGrouping: false, minimumIntegerDigits: 4 })}`;
         }
         // console.log(uniqCode);
         const bussiness = await Bussiness.create({
@@ -146,7 +146,7 @@ const getBussinessById = asyncHandler(async (req, res) => {
             },
             {
                 $project: {
-                    uniqCode:1,
+                    uniqCode: 1,
                     coverImage: 1,
                     brandLogo: 1,
                     title: 1,
@@ -177,7 +177,7 @@ const getBussinessById = asyncHandler(async (req, res) => {
 const updateBussinessInfo = asyncHandler(async (req, res) => {
     try {
 
-        const { Id, title, city, state, street, area, pincode, latitude, longitude, fullAddress, category,description } = req.body
+        const { Id, title, city, state, street, area, pincode, latitude, longitude, fullAddress, category, description } = req.body
 
         if (!title || !category) {
             throw new ApiError(400, "title and category are required")
@@ -351,6 +351,58 @@ const updateStatusBussiness = asyncHandler(async (req, res) => {
 //         )
 // })
 
+const getAllBussinessList = asyncHandler(async (req, res) => {
+    try {
+        const { domain, vendorId, status, activityId } = req.query
+
+        const query = {}
+        if (domain && domain != undefined) { query["domain"] = new mongoose.Types.ObjectId(domain) };
+        if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
+        if (status && status != undefined) { query["status"] = status } else { query["status"] = { $ne: "delete" } };
+        if (activityId && activityId != undefined) { query["bussactivity.activityId"] = new mongoose.Types.ObjectId(activityId) };
+
+        // console.log(query);
+        const bussiness = await Bussiness.aggregate([
+
+            {
+                $lookup: {
+                    from: "activities",
+                    localField: "_id",
+                    foreignField: "bussinessId",
+                    as: "bussactivity",
+
+                }
+            },
+            {
+                $match: query
+            },
+            {
+                $project: {
+                    uniqCode: 1,
+                    title: 1,
+                }
+            },
+        ])
+
+        if (!bussiness) {
+            throw new ApiError(500, `Something went wrong while fetching Bussiness list`)
+        } else if (bussiness.length == 0) {
+            throw new ApiError(404, `NO Data Found ! Bussiness list is empty`)
+
+        }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, bussiness, `bussiness List Fetched successfully`)
+            )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Bussiness`))
+    }
+})
+
 const getAllBussiness = asyncHandler(async (req, res) => {
     try {
         const { limit = 200, startIndex = 0, domain, vendorId, status, activityId, state, city, fromDate, toDate } = req.query
@@ -358,7 +410,7 @@ const getAllBussiness = asyncHandler(async (req, res) => {
         const query = {}
         if (domain && domain != undefined) { query["domain"] = new mongoose.Types.ObjectId(domain) };
         if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
-        if (status && status != undefined) { query["status"] = status }else { query["status"] = {$ne:"delete"}};
+        if (status && status != undefined) { query["status"] = status } else { query["status"] = { $ne: "delete" } };
         if (state && state != undefined) { query["address.state"] = { $regex: `.*${state}.*`, $options: 'i' } };
         if (city && city != undefined) { query["address.city"] = { $regex: `.*${city}.*`, $options: 'i' } };
         if (fromDate && toDate && fromDate != undefined && toDate != undefined) { query["createdAt"] = { "$gte": new Date(fromDate), "$lte": new Date(toDate) } };
@@ -374,7 +426,7 @@ const getAllBussiness = asyncHandler(async (req, res) => {
                     localField: "_id",
                     foreignField: "bussinessId",
                     as: "bussactivity",
-                   
+
                 }
             },
             {
@@ -433,7 +485,7 @@ const getAllBussiness = asyncHandler(async (req, res) => {
             },
             {
                 $project: {
-                    uniqCode:1,
+                    uniqCode: 1,
                     coverImage: 1,
                     brandLogo: 1,
                     title: 1,
@@ -472,7 +524,7 @@ const getAllBussiness = asyncHandler(async (req, res) => {
 const getActiveBussiness = asyncHandler(async (req, res) => {
 
     try {
-        const { limit = 200, startIndex = 0, domain, vendorId, activityId,state,city } = req.query
+        const { limit = 200, startIndex = 0, domain, vendorId, activityId, state, city } = req.query
 
         const query = {}
         if (domain && domain != undefined) { query["domain"] = new mongoose.Types.ObjectId(domain) };
@@ -480,7 +532,7 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
         if (state && state != undefined) { query["address.state"] = { $regex: `.*${state}.*`, $options: 'i' } };
         if (city && city != undefined) { query["address.city"] = { $regex: `.*${city}.*`, $options: 'i' } };
         if (activityId && activityId != undefined) { query["bussactivity.activityId"] = new mongoose.Types.ObjectId(activityId) };
-          // if (activityId && activityId != undefined) { query["bussactivity.slots.rate"] = new mongoose.Types.ObjectId(activityId) };
+        // if (activityId && activityId != undefined) { query["bussactivity.slots.rate"] = new mongoose.Types.ObjectId(activityId) };
 
         query["status"] = "active";
         // console.log(query);
@@ -499,23 +551,23 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
                             foreignField: "busActId",
                             as: "slots"
                         },
-                    }, 
+                    },
                     {
                         $unwind: "$slots" // Unwind the startingAt array to work with its elements
-                      },
-                      {
+                    },
+                    {
                         $group: {
-                          _id: "$_id",
-                          minRate: { $min: "$slots.rate" } // Get the minimum rate from the startingAt array
+                            _id: "$_id",
+                            minRate: { $min: "$slots.rate" } // Get the minimum rate from the startingAt array
                         }
-                      },
-                      {
+                    },
+                    {
                         $project: {
-                          _id: 0,
-                          minRate: 1
+                            _id: 0,
+                            minRate: 1
                         }
-                      }
-                   
+                    }
+
                     ]
                 }
             },
@@ -544,7 +596,7 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
             },
             {
                 $project: {
-                    uniqCode:1,
+                    uniqCode: 1,
                     coverImage: 1,
                     brandLogo: 1,
                     title: 1,
@@ -552,7 +604,7 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
                     status: 1,
                     rating: 1,
                     reviewcount: 1,
-                    startingAt:1,
+                    startingAt: 1,
                 }
             }, { $sort: { _id: -1 } },
             { $skip: parseInt(startIndex) },
@@ -608,7 +660,7 @@ const getMyBussiness = asyncHandler(async (req, res) => {
             },
             {
                 $project: {
-                    uniqCode:1,
+                    uniqCode: 1,
                     coverImage: 1,
                     brandLogo: 1,
                     title: 1,
@@ -995,15 +1047,13 @@ const getReviews = asyncHandler(async (req, res) => {
     try {
         const { limit = 200, startIndex = 0, bussinessId, eventId } = req.query
 
-        if (!bussinessId && !eventId) {
-            throw new ApiError(400, `BussinessId Or EventId is required`)
-        }
+        const query = {}
+        if (bussinessId && bussinessId != undefined) { query["bussinessId"] = new mongoose.Types.ObjectId(bussinessId) };
+        if (eventId && eventId != undefined) { query["eventId"] = new mongoose.Types.ObjectId(eventId) };
 
         const review = await Review.aggregate([
             {
-                $match: {
-                    $or: [{ bussinessId: new mongoose.Types.ObjectId(bussinessId) }, { eventId: new mongoose.Types.ObjectId(eventId) }]
-                }
+                $match: query
             },
             {
                 $lookup: {
@@ -1123,4 +1173,5 @@ export {
     getGallery,
     addGallery,
     deleteGallery,
+    getAllBussinessList,
 }

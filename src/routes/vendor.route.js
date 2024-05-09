@@ -16,6 +16,9 @@ import {
     getVendorDetail,
     updateVendorDetail,
     updateVendorAddress,
+    mailtesting,
+    updatefcmCode,
+    getVendorsTitle,
     // getVendorChannelProfile, 
     // getWatchHistory
 } from "../controllers/vendor.controller.js";
@@ -25,6 +28,8 @@ import { verifyVendorJWT } from "../middlewares/auth.middleware.js";
 // const vendorUpload = require("../middlewares/multer.middleware.js")
 
 const router = Router()
+
+router.route("/testmail").get(mailtesting)
 
 router.route("/vendor/register").post(registerVendor)
 
@@ -42,6 +47,8 @@ router.route("/vendor/update-status").patch(updateVendorStatus)
 router.route("/vendor/all").get(getVendorsList)
 router.route("/vendor/detail").get(getVendorDetail).patch(updateVendorDetail)
 router.route("/vendor/page-vendor").get(getPaginateVendors)
+router.route("/vendor/fcm").patch(verifyVendorJWT,updatefcmCode)
+router.route("/vendor/list").get(getVendorsTitle)
 
 router.route("/user/register").post(registerVendor)
 
@@ -60,6 +67,8 @@ router.route("/user/address").patch(verifyVendorJWT,updateVendorAddress)
 router.route("/user/all").get(getVendorsList)
 router.route("/user/detail").get(getVendorDetail).patch(updateVendorDetail)
 router.route("/user/page-user").get(getPaginateVendors)
+router.route("/user/fcm").patch(verifyVendorJWT,updatefcmCode)
+router.route("/user/list").get(getVendorsTitle)
 
 router.route("/admin/login").post(adminLogin)
 router.route("/admin/logout").post(verifyVendorJWT, logoutVendor)

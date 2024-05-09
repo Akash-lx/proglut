@@ -362,6 +362,36 @@ const getAllEvent = asyncHandler(async (req, res) => {
     }
 })
 
+const getAllEventList = asyncHandler(async (req, res) => {
+    try {
+        const {bussinessId, vendorId, status} = req.query
+
+        const query = {}
+        if (bussinessId && bussinessId != undefined) { query["bussinessId"] = new mongoose.Types.ObjectId(bussinessId) };
+        if (vendorId && vendorId != undefined) { query["owner"] = new mongoose.Types.ObjectId(vendorId) };
+        if (status && status != undefined) { query["status"] = status }else { query["status"] = {$ne:"delete"}};
+    
+        const event = await Event.find(query).select("uniqCode,title")
+      
+        if (!event) {
+            throw new ApiError(500, `Something went wrong while fetching Event list`)
+        } else if (event.length == 0) {
+            throw new ApiError(404, `NO Data Found ! Event list is empty`)
+
+        }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, event, `Event List Fetched successfully`)
+            )
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || `Server Error in Event`))
+    }
+})
+
 const getActiveEvent = asyncHandler(async (req, res) => {
 
     try {
@@ -764,4 +794,5 @@ export {
     updatePackage,
     updatePackageStatus,
     addRules,
+    getAllEventList,
 }
