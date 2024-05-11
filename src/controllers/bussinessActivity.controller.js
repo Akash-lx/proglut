@@ -1,7 +1,7 @@
 import mongoose, { isValidObjectId } from "mongoose"
 import { Activities } from "../models/activities.model.js"
 import { Slots } from "../models/slots.model.js"
-// import { Bussiness } from "../models/bussiness.model.js"
+import { Booking } from "../models/booking.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
@@ -114,7 +114,7 @@ const getActiveActivity = asyncHandler(async (req, res) => {
                     activityId: 1,
                     slots: 1,
                     bussinessId: 1,
-                    description:1,
+                    description: 1,
                     status: 1,
                     owner: 1,
                     createdAt: 1,
@@ -214,16 +214,16 @@ const getActivityById = asyncHandler(async (req, res) => {
 
 const updateDescBussActivity = asyncHandler(async (req, res) => {
     try {
-        const { bussActivityId,description } = req.body
+        const { bussActivityId, description } = req.body
 
         if (!bussActivityId) {
             throw new ApiError(400, `Bussiness Activity is required`)
         }
-        const updateDesc = await Activities.findByIdAndUpdate(bussActivityId,{
-            $set :{
+        const updateDesc = await Activities.findByIdAndUpdate(bussActivityId, {
+            $set: {
                 description
             },
-        },  { new: true })
+        }, { new: true })
 
         if (!updateDesc) {
             throw new ApiError(500, `Something went wrong while update Business Activity`)
@@ -275,7 +275,7 @@ const getActivitySlots = asyncHandler(async (req, res) => {
         const query = {}
         query['busActId'] = new mongoose.Types.ObjectId(bussActivityId)
         if (day && day != undefined) { query["days"] = day };
-        query["status"] = {$ne:"delete"};
+        query["status"] = { $ne: "delete" };
         const slotlist = await Slots.find(query)
 
         if (slotlist.length == 0) {
@@ -292,6 +292,67 @@ const getActivitySlots = asyncHandler(async (req, res) => {
             .status(error.statusCode || 500)
             .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in Activity Slot'))
     }
+})
+
+const getActiveSlots = asyncHandler(async (req, res) => {
+
+    try {
+        const { day, bussActivityId } = req.query;
+
+        if (!bussActivityId) {
+            throw new ApiError(400, `BussActivityId is required`);
+        }
+
+        const slotArr = [];
+        const query = {};
+        query['busActId'] = new mongoose.Types.ObjectId(bussActivityId);
+        if (day && day != undefined) { query["days"] = day };
+        query["status"] = { $ne: "delete" };
+        const slotlist = await Slots.find(query);
+
+        if (slotlist.length > 0) {
+            await Promise.all(slotlist.map(async (item) => {
+                // console.log("1");
+
+                const booking = await Booking.countDocuments({ "activities.slotId": item._id, "activities.date": { $eq: new Date(new Date().setHours(0, 0, 0, 0)) } }).exec();
+                // console.log(booking);
+                if (booking < item.maxseat) {
+                    const newItem = {};
+                    let available_seat = (item.maxseat - booking);
+                    newItem['_id'] = item._id;
+                    newItem['busActId'] = item.busActId;
+                    newItem['days'] = item.days;
+                    newItem['fromdate'] = item.fromdate;
+                    newItem['todate'] = item.todate;
+                    newItem['startTime'] = item.startTime;
+                    newItem['endTime'] = item.endTime;
+                    newItem['maxseat'] = item.maxseat;
+                    newItem['rate'] = item.rate;
+                    newItem['status'] = item.status;
+                    newItem['available_seat'] = available_seat;
+                    slotArr.push(newItem);
+                    // console.log(available_seat);
+                    // console.log(item);
+                }
+
+            }));
+        }
+
+        // console.log("3");
+        // console.log(slotArr);
+        if (slotArr.length == 0) {
+            throw new ApiError(404, `Data Not Found! List is empty`);
+        }
+
+        return res.status(201).json(
+            new ApiResponse(200, slotArr, `Slots List Fetch Successfully`)
+        );
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in Activity Slot'));
+    }
+
 })
 
 
@@ -443,5 +504,5 @@ export {
     addSlot,
     updateSlot,
     updateSlotStatus,
-
+    getActiveSlots,
 }

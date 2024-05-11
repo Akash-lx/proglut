@@ -6,6 +6,8 @@ import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 import fs from "fs"
+import SendSms from "../utils/SendSms.js"
+import Sendmail from "../utils/Sendmail.js"
 
 const addBussinessInfo = asyncHandler(async (req, res) => {
     try {
@@ -54,6 +56,33 @@ const addBussinessInfo = asyncHandler(async (req, res) => {
             throw new ApiError(500, `Something went wrong while adding`)
 
         }
+
+        let msg = `Hi ${req.vendor.fullName},\n\nYour registration for ${createdBussiness.title} on PROGLUT is currently pending review. We're working diligently to process your request. Rest assured, we'll notify you once your business is live and ready for customers.\n\nThank you for your patience! If you have any questions or need assistance, don't hesitate to contact us on +917999845114\n\nBest regards,\nPROGLUT Team`;
+        let msgId = "1707171507663477884";
+
+        const msgSend = await SendSms(msg, msgId, req.vendor.mobile);
+
+        if (msgSend) {
+            if (msgSend.return == false) {
+                throw new ApiError(500, msgSend.message[0])
+            }
+        }
+
+        let subject = "Bussiness Registered Successfully";
+        let body = `<body>
+<section>
+    <div class="row">
+        <p>
+        Hi ${req.vendor.fullName},<br><br>Your registration for ${createdBussiness.title} on PROGLUT is currently pending review. We're working diligently to process your request. Rest assured, we'll notify you once your business is live and ready for customers.<br><br>Thank you for your patience! If you have any questions or need assistance, don't hesitate to contact us on +917999845114<br><br>Best regards,<br>PROGLUT Team
+        </p>
+    </div>
+    
+    
+</section>
+</body>`;
+        const mailsend = await Sendmail(req.vendor.email, subject, body)
+
+        // console.log(msgSend);
 
         return res.status(201).json(
             new ApiResponse(200, createdBussiness, `bussiness Added Successfully`)
@@ -296,6 +325,10 @@ const updateStatusBussiness = asyncHandler(async (req, res) => {
         if (!Id || !status) {
             throw new ApiError(400, "Id and status are required")
         }
+
+        const prevBussi = status == 'active' ? await Bussiness.findById(Id).populate('owner', 'fullName mobile email').exec() : "";
+
+
         const bussiness = await Bussiness.findByIdAndUpdate(
             Id,
             {
@@ -305,6 +338,43 @@ const updateStatusBussiness = asyncHandler(async (req, res) => {
             },
             { new: true }
         ).select()
+
+        if (!bussiness) {
+            throw new ApiError(500, `Something went wrong while adding`)
+        }
+
+        if (status == 'active') {
+            if (prevBussi.status == 'pending') {
+                let msg = `Hi ${prevBussi.owner.fullName},\n\nWelcome on board ! Your business, ${prevBussi.title}, has been successfully verified on PROGLUT. Your services are now accessible to our users. You may now showcase your offerings to attract more customers. Call us for more details on +917999845114\n\nBest regards,\nPROGLUT Team`;
+                let msgId = "1707171507653266568";
+
+                const msgSend = await SendSms(msg, msgId, prevBussi.owner.mobile);
+                // console.log(msg)
+                if (msgSend) {
+                    if (msgSend.return == false) {
+                        throw new ApiError(500, msgSend.message[0])
+                    }
+                }
+
+                let subject = "Bussiness Verified Successfully";
+                let body = `<body>
+    <section>
+    <div class="row">
+    <p>
+    Hi ${prevBussi.owner.fullName},<br><br>Welcome on board ! Your business, ${prevBussi.title}, has been successfully verified on PROGLUT. Your services are now accessible to our users. You may now showcase your offerings to attract more customers. Call us for more details on +917999845114<br><br>Best regards,<br>PROGLUT Team
+    </p>
+    </div>
+    
+    
+    </section>
+    </body>`;
+                // console.log(body)
+                const mailsend = await Sendmail(prevBussi.owner.email, subject, body)
+
+            }
+        }
+
+
 
         return res
             .status(200)

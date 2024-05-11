@@ -10,6 +10,7 @@ import {
     addSlot,
     updateSlot,
     updateSlotStatus,
+    getActiveSlots,
 
 } from "../controllers/bussinessActivity.controller.js"
 import { verifyVendorJWT } from "../middlewares/auth.middleware.js"
@@ -30,6 +31,8 @@ router.route("/bussinessActivity/slots").get(getActivitySlots)
     .post(verifyVendorJWT, addSlot)
     .patch(verifyVendorJWT, updateSlot)
     .delete(verifyVendorJWT, updateSlotStatus);
+
+router.route("/bussinessActivity/slots/active").get(getActiveSlots);
 
 
 

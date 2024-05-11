@@ -9,7 +9,7 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 // Bussiness booking apis ////
 const addBussBookingInfo = asyncHandler(async (req, res) => {
     try {
-        const { activities, totalPayable, bussinessId, items, foods } = req.body
+        const { activities, totalPayable, bussinessId, items, foods, totalCharge, totalDiscount, couponId } = req.body
 
         if (!activities || !bussinessId || !totalPayable) {
             throw new ApiError(400, "All fields are required")
@@ -38,6 +38,9 @@ const addBussBookingInfo = asyncHandler(async (req, res) => {
             bussinessId,
             addonItems: items,
             addonFoods: foods,
+            totalCharge,
+            totalDiscount,
+            couponId,
             owner: req.vendor._id,
         })
 
@@ -64,9 +67,14 @@ const getBusBookingById = asyncHandler(async (req, res) => {
     try {
         const { Id } = req.query
 
+        if (!Id) {
+            throw new ApiError(400, `Id is required`)
+        }
+
         const booking = await Booking.findById(Id)
             .populate('owner', 'fullName profileImage usertype status')
             .populate('bussinessId', 'title brandLogo coverImage address')
+            .populate('couponId', 'title code')
             .populate('addonItems.itemId', 'title image')
             .populate('addonFoods.itemId', 'title image')
             .populate({
@@ -79,156 +87,9 @@ const getBusBookingById = asyncHandler(async (req, res) => {
             })
             .populate('activities.slotId', 'title startTime endTime duration rate').exec();
 
-        // const booking = await Booking.aggregate([
-        //     {
-        //         $match: {
-        //             _id: new mongoose.Types.ObjectId(Id)
-        //         }
-        //     },
-        //     {
-        //         $lookup: {
-        //             from: "vendors",
-        //             localField: "owner",
-        //             foreignField: "_id",
-        //             as: "customer",
-        //             pipeline: [{
-        //                 $project: {
-        //                     fullName: 1,
-        //                     profileImage: 1,
-        //                     usertype: 1,
-        //                     status: 1,
-
-        //                 }
-        //             }
-        //             ]
-        //         }
-        //     }, {
-        //         $lookup: {
-        //             from: "bussinesses",
-        //             localField: "bussinessId",
-        //             foreignField: "_id",
-        //             as: "business",
-        //             pipeline: [{
-        //                 $project: {
-        //                     title: 1,
-        //                     brandLogo: 1,
-        //                     address: 1,
-
-        //                 }
-        //             }
-        //             ]
-        //         },
-        //     },
-
-        //     {
-        //         $lookup: {
-        //             from: "activities",
-        //             localField: "activities.activityId",
-        //             foreignField: "_id",
-        //             as: "activity",
-        //             pipeline: [
-        //                 {
-        //                     $lookup: {
-        //                         from: "domains",
-        //                         localField: "activityId",
-        //                         foreignField: "_id",
-        //                         as: "domain",
-        //                         pipeline: [{
-        //                             $project: {
-        //                                 title: 1,
-
-        //                             }
-        //                         }
-        //                         ]
-        //                     },
-        //                 }, {
-        //                     $project: {
-        //                         domain: { $first: "$domain" },
-        //                     }
-        //                 }
-        //             ]
-        //         },
-        //     },
-        //     {
-        //         $lookup: {
-        //             from: "slots",
-        //             localField: "activities.slotId",
-        //             foreignField: "_id",
-        //             as: "slots",
-        //             pipeline: [
-        //                 {
-        //                     $project: {
-        //                         startTime: 1,
-        //                         endTime: 1,
-        //                         rate: 1,
-        //                         status: 1,
-        //                     }
-        //                 }
-        //             ]
-        //         },
-        //     },
-        //     {
-        //         $lookup: {
-        //             from: "items",
-        //             localField: "addonItems.itemId",
-        //             foreignField: "_id",
-        //             as: "items",
-        //             pipeline: [
-        //                 {
-        //                     $project: {
-        //                        title: 1,
-        //                     }
-        //                 }
-        //             ]
-        //         },
-        //     },
-        //     {
-        //         $lookup: {
-        //             from: "items",
-        //             localField: "addonFoods.itemId",
-        //             foreignField: "_id",
-        //             as: "foods",
-        //             pipeline: [
-        //                 {
-        //                     $project: {
-        //                         title: 1,
-        //                     }
-        //                 }
-        //             ]
-        //         },
-        //     },
-
-
-        //     {
-        //         $addFields: {
-        //             businessId: { $first: "$business" },
-        //             customerId: { $first: "$customer" },
-        //             "activities.title":"$activity.domain.title",
-        //             "activities.slots": "$slots",
-        //             "addonItems.title": "$items.title",
-        //             "addonFoods.title": "$foods.title",
-        //             //  "specs.fuel_type": "unleaded"
-
-        //         }
-        //     },
-        //     {
-        //         $project: {
-        //             bookNo: 1,
-        //             totalPayable: 1,
-        //             isPaid: 1,
-        //             paidAmount: 1,
-        //             status: 1,
-        //             addonItems: 1,
-        //             addonFoods: 1,
-        //             transactionId: 1,
-        //             businessId: 1,
-        //             activities:1,
-        //             customerId: 1,
-        //             createdAt: 1,
-
-        //         }
-        //     }
-        // ])
+        if (!booking) {
+            throw new ApiError(500, `Invaild Booking Id! Please Check once`)
+        }
 
         return res.status(201).json(
             new ApiResponse(200, booking, `booking fetched Successfully`)
@@ -243,7 +104,7 @@ const getBusBookingById = asyncHandler(async (req, res) => {
 const updateBusBookingInfo = asyncHandler(async (req, res) => {
     try {
 
-        const { Id, activities, totalPayable, bussinessId, items, foods } = req.body
+        const { Id, activities, totalPayable, bussinessId, items, foods, totalCharge, totalDiscount, couponId } = req.body
 
         if (!Id || !activities || !bussinessId || !totalPayable) {
             throw new ApiError(400, "All fields are required")
@@ -258,7 +119,9 @@ const updateBusBookingInfo = asyncHandler(async (req, res) => {
                     bussinessId,
                     addonItems: items,
                     addonFoods: foods,
-
+                    totalCharge,
+                    totalDiscount,
+                    couponId,
                 }
             },
             { new: true }
@@ -337,6 +200,10 @@ const updateBusStatusBooking = asyncHandler(async (req, res) => {
             { new: true }
         ).select()
 
+        if (!booking) {
+            throw new ApiError(500, `Something went wrong while update booking info`)
+        }
+
         return res
             .status(200)
             .json(
@@ -383,7 +250,7 @@ const getAllBusBooking = asyncHandler(async (req, res) => {
                 },
 
             })
-            .sort({_id:-1})
+            .sort({ _id: -1 })
             .skip(parseInt(startIndex))
             .limit(parseInt(limit)).exec();
 
@@ -597,6 +464,10 @@ const updateBookActStatus = asyncHandler(async (req, res) => {
                 }, { new: true })
         }
 
+        if (!actibook) {
+            throw new ApiError(500, `Something went wrong while update booking info`)
+        }
+
         return res
             .status(200)
             .json(
@@ -613,7 +484,7 @@ const updateBookActStatus = asyncHandler(async (req, res) => {
 // Event booking apis ////
 const addEvtBookingInfo = asyncHandler(async (req, res) => {
     try {
-        const { price, person, fromdate, totalPayable, eventId, packageId } = req.body
+        const { price, person, fromdate, totalPayable, eventId, packageId, totalCharge, totalDiscount, couponId } = req.body
 
         if (!fromdate || !eventId || !price || !person || !totalPayable || !packageId) {
             throw new ApiError(400, "All fields are required")
@@ -640,6 +511,9 @@ const addEvtBookingInfo = asyncHandler(async (req, res) => {
             fromdate,
             totalPayable,
             eventId,
+            totalCharge,
+            totalDiscount,
+            couponId,
             owner: req.vendor._id,
         })
 
@@ -666,11 +540,20 @@ const getEvtBookingById = asyncHandler(async (req, res) => {
     try {
         const { Id } = req.query
 
+        if (!Id) {
+            throw new ApiError(400, `Id is required`)
+        }
+
         const booking = await EventBooking.findById(Id)
             .populate('owner', 'fullName profileImage usertype status')
             .populate('eventId', 'title hostName address dateTime rules')
+            .populate('couponId', 'title code')
             .populate('packageId', 'title amount forPeople description')
             .exec();
+
+        if (!booking) {
+            throw new ApiError(500, `Invaild Booking Id! Please Check once`)
+        }
 
         return res.status(201).json(
             new ApiResponse(200, booking, `booking fetched Successfully`)
@@ -685,7 +568,7 @@ const getEvtBookingById = asyncHandler(async (req, res) => {
 const updateEvtBookingInfo = asyncHandler(async (req, res) => {
     try {
 
-        const { Id, price, person, fromdate, totalPayable, eventId, packageId } = req.body
+        const { Id, price, person, fromdate, totalPayable, eventId, packageId,totalCharge,totalDiscount,couponId} = req.body
 
         if (!fromdate || !eventId || !price || !person || !totalPayable || !packageId) {
             throw new ApiError(400, "All fields are required")
@@ -702,7 +585,9 @@ const updateEvtBookingInfo = asyncHandler(async (req, res) => {
                     totalPayable,
                     eventId,
                     packageId,
-
+                    totalCharge,
+                    totalDiscount,
+                    couponId,
 
                 }
             },
@@ -781,6 +666,10 @@ const updateEvtStatusBooking = asyncHandler(async (req, res) => {
             },
             { new: true }
         ).select()
+
+        if (!booking) {
+            throw new ApiError(500, `Something went wrong while update booking info`)
+        }
 
         return res
             .status(200)

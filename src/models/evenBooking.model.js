@@ -18,6 +18,19 @@ const eventBookingSchema = new Schema(
 
         },
        
+        totalCharge: {
+            type: Number,
+            default:0,
+        },
+        totalDiscount: {
+            type: Number,
+            default:0,
+        },
+        couponId: {
+            type: Schema.Types.ObjectId,
+            ref: "Coupon",
+        },
+
         packageId: {
             type: Schema.Types.ObjectId,
             ref: "Activities",
