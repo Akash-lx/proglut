@@ -307,10 +307,10 @@ const getActiveCoupon = asyncHandler(async (req, res) => {
 
 const addCoupon = asyncHandler(async (req, res) => {
     try {
-        const { title, code, startdate, enddate, disType, discount, minAmt, isVisible, desc, eventId, businessId } = req.body
+        const { title, code, startDate, endDate, disType, discount, minAmt, isVisible, desc, eventId, businessId } = req.body
 
 
-        if (!title || !code || !startdate || !enddate || !disType || !discount || !minAmt) {
+        if (!title || !code || !startDate || !endDate || !disType || !discount || !minAmt) {
             throw new ApiError(400, `all fields are required`)
         }
 
@@ -327,8 +327,8 @@ const addCoupon = asyncHandler(async (req, res) => {
         const addcoupon = await Coupon.create({
             title,
             code,
-            startdate,
-            enddate,
+            startDate,
+            endDate,
             disType,
             discount,
             minAmt,
@@ -405,9 +405,9 @@ const getCouponByCode = asyncHandler(async (req, res) => {
 
 const updateCoupon = asyncHandler(async (req, res) => {
     try {
-        const { Id, title, code, startdate, enddate, disType, discount, minAmt, isVisible, desc, eventId, businessId, status } = req.body
+        const { Id, title, code, startDate, endDate, disType, discount, minAmt, isVisible, desc, eventId, businessId, status } = req.body
 
-        if (!title || !code || !startdate || !enddate || !disType || !discount || !minAmt) {
+        if (!title || !code || !startDate || !endDate || !disType || !discount || !minAmt) {
             throw new ApiError(400, `all fields are required`)
         }
 
@@ -430,8 +430,8 @@ const updateCoupon = asyncHandler(async (req, res) => {
                 $set: {
                     title,
                     code,
-                    startdate,
-                    enddate,
+                    startDate,
+                    endDate,
                     disType,
                     discount,
                     minAmt,
