@@ -561,7 +561,7 @@ const getAllBussiness = asyncHandler(async (req, res) => {
                     title: 1,
                     address: 1,
                     status: 1,
-                    rating: 1,
+                    rating: { $toDouble: "$rating" },
                     reviewcount: 1,
                     owner: 1,
                     domain: 1,
@@ -672,7 +672,7 @@ const getActiveBussiness = asyncHandler(async (req, res) => {
                     title: 1,
                     address: 1,
                     status: 1,
-                    rating: 1,
+                    rating: { $toDouble: "$rating" },
                     reviewcount: 1,
                     startingAt: 1,
                 }
@@ -736,7 +736,7 @@ const getMyBussiness = asyncHandler(async (req, res) => {
                     title: 1,
                     address: 1,
                     status: 1,
-                    rating: 1,
+                    rating: { $toDouble: "$rating" },
                     reviewcount: 1,
                 }
             }

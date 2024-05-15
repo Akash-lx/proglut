@@ -4,7 +4,7 @@ import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 const reviewSchema = new Schema(
     {
         rating: {
-            type: mongoose.Types.Decimal128,
+            type: Number,
             required: true
         },
         content: {
