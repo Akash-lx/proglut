@@ -1121,38 +1121,44 @@ const getReviews = asyncHandler(async (req, res) => {
         if (bussinessId && bussinessId != undefined) { query["bussinessId"] = new mongoose.Types.ObjectId(bussinessId) };
         if (eventId && eventId != undefined) { query["eventId"] = new mongoose.Types.ObjectId(eventId) };
 
-        const review = await Review.aggregate([
-            {
-                $match: query
-            },
-            {
-                $lookup: {
-                    from: "vendors",
-                    localField: "owner",
-                    foreignField: "_id",
-                    as: "owner",
-                    pipeline: [{
-                        $project: {
-                            fullName: 1,
-                            mobile: 1,
-                            profileImage: 1,
-                            usertype: 1,
-                            status: 1,
-                        }
-                    }
-                    ]
-                }
-            }, {
-                $project: {
-                    rating: 1,
-                    content: 1,
-                    owner: 1,
-                }
-            },
-            { $sort: { _id: -1 } },
-            { $skip: parseInt(startIndex) },
-            { $limit: parseInt(limit) },
-        ])
+        const review = await Review.find(query)
+        .populate("owner","fullName mobile profileImage usertype status")
+        .populate("bussinessId","uniqCode brandLogo title")
+        .populate("eventId","uniqCode title hostName")
+        .select("-__v").sort({_id:-1}).skip(startIndex).limit(limit).exec();
+          
+        // const review = await Review.aggregate([
+        //     {
+        //         $match: query
+        //     },
+        //     {
+        //         $lookup: {
+        //             from: "vendors",
+        //             localField: "owner",
+        //             foreignField: "_id",
+        //             as: "owner",
+        //             pipeline: [{
+        //                 $project: {
+        //                     fullName: 1,
+        //                     mobile: 1,
+        //                     profileImage: 1,
+        //                     usertype: 1,
+        //                     status: 1,
+        //                 }
+        //             }
+        //             ]
+        //         }
+        //     }, {
+        //         $project: {
+        //             rating: 1,
+        //             content: 1,
+        //             owner: 1,
+        //         }
+        //     },
+        //     { $sort: { _id: -1 } },
+        //     { $skip: parseInt(startIndex) },
+        //     { $limit: parseInt(limit) },
+        // ])
 
         if (!review) {
             throw new ApiError(500, `Something went wrong while fetching Review`)

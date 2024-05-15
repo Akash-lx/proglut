@@ -73,7 +73,14 @@ const getBusBookingById = asyncHandler(async (req, res) => {
 
         const booking = await Booking.findById(Id)
             .populate('owner', 'fullName profileImage usertype status')
-            .populate('bussinessId', 'title brandLogo coverImage address')
+            .populate({
+                path: 'bussinessId',
+                select: 'title brandLogo coverImage address owner',
+                populate: {
+                    path: 'owner',
+                    select: 'fullName profileImage mobile'
+                }
+            })
             .populate('couponId', 'title code')
             .populate('addonItems.itemId', 'title image')
             .populate('addonFoods.itemId', 'title image')
@@ -546,7 +553,14 @@ const getEvtBookingById = asyncHandler(async (req, res) => {
 
         const booking = await EventBooking.findById(Id)
             .populate('owner', 'fullName profileImage usertype status')
-            .populate('eventId', 'title hostName address dateTime rules')
+            .populate({
+                path: 'eventId',
+                select: 'title hostName address dateTime rules owner',
+                populate: {
+                    path: 'owner',
+                    select: 'fullName profileImage mobile'
+                }
+            })
             .populate('couponId', 'title code')
             .populate('packageId', 'title amount forPeople description')
             .exec();
@@ -568,7 +582,7 @@ const getEvtBookingById = asyncHandler(async (req, res) => {
 const updateEvtBookingInfo = asyncHandler(async (req, res) => {
     try {
 
-        const { Id, price, person, fromdate, totalPayable, eventId, packageId,totalCharge,totalDiscount,couponId} = req.body
+        const { Id, price, person, fromdate, totalPayable, eventId, packageId, totalCharge, totalDiscount, couponId } = req.body
 
         if (!fromdate || !eventId || !price || !person || !totalPayable || !packageId) {
             throw new ApiError(400, "All fields are required")
