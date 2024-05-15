@@ -19,6 +19,7 @@ import {
     mailtesting,
     updatefcmCode,
     getVendorsTitle,
+    verifyWebOTP,
     // getVendorChannelProfile, 
     // getWatchHistory
 } from "../controllers/vendor.controller.js";
@@ -36,6 +37,7 @@ router.route("/vendor/register").post(registerVendor)
 router.route("/vendor/login").post(loginVendor)
 router.route("/vendor/sendOTP").post(sendOTP)
 router.route("/vendor/verifyOTP").post(verifyOTP)
+router.route("/vendor/verifyWebOTP").post(verifyWebOTP)
 
 //secured routes
 router.route("/vendor/logout").post(verifyVendorJWT, logoutVendor)

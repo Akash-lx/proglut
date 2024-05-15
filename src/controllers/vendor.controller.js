@@ -180,7 +180,7 @@ const sendOTP = asyncHandler(async (req, res) => {
                 throw new ApiError(500, msgSend.message[0])
             }
         }
-       
+
 
         const newvendor = await Vendor.findByIdAndUpdate(
             vendor?._id,
@@ -233,15 +233,15 @@ const verifyOTP = asyncHandler(async (req, res) => {
         }
         let isOtpValid = false;
         let temp_otp = 222333;
-        if(mobile == 7879122060 || mobile == 7999845114){
-            if(otp == temp_otp){
+        if (mobile == 7879122060 || mobile == 7999845114) {
+            if (otp == temp_otp) {
                 isOtpValid = true;
-            }else if(vendor.otp == otp){
+            } else if (vendor.otp == otp) {
                 isOtpValid = true;
-            }else {
+            } else {
                 isOtpValid = false;
             }
-        }else {
+        } else {
             isOtpValid = vendor.otp == otp ? true : false;
         }
 
@@ -557,14 +557,14 @@ const updateVendorStatus = asyncHandler(async (req, res) => {
 const updatefcmCode = asyncHandler(async (req, res) => {
     try {
         const usertype = req.path.split("/")[1];
-        const {fcmId } = req.body
+        const { fcmId } = req.body
 
         if (!fcmId) {
             throw new ApiError(400, "fcmId is required")
         }
 
         const vendor = await Vendor.findOneAndUpdate(
-           {_id:req.vendor._id, usertype:usertype} ,
+            { _id: req.vendor._id, usertype: usertype },
             {
                 $set: {
                     fcmId: fcmId
@@ -634,8 +634,8 @@ const getVendorsList = asyncHandler(async (req, res) => {
 const getVendorsTitle = asyncHandler(async (req, res) => {
     try {
         const usertype = req.path.split("/")[1];
-      
-        const vendor = await Vendor.find({usertype:usertype,status:"active"})
+
+        const vendor = await Vendor.find({ usertype: usertype, status: "active" })
             .select("uniqCode mobile fullName").exec();
 
         if (!vendor) {
@@ -774,10 +774,64 @@ const adminLogin = asyncHandler(async (req, res) => {
 
 })
 
+const verifyWebOTP = asyncHandler(async (req, res) => {
+
+    try {
+        const usertype = req.path.split("/")[1];
+        const { email, mobile, otp } = req.body
+
+        if (!mobile && !email) {
+            throw new ApiError(400, "mobile or email is required")
+        }
+        if (!otp) {
+            throw new ApiError(400, "Otp is required")
+        }
+
+        const vendor = await Vendor.findOne({
+            usertype: usertype,
+            $or: [{ mobile }, { email }]
+        })
+
+        if (!vendor) {
+            throw new ApiError(404, `${usertype} does not exist`)
+        } else if (vendor.status != 'active') {
+            throw new ApiError(403, `${usertype} is ${vendor.status} ! please contact admin`)
+        }
+
+        let isOtpValid = vendor.otp == otp ? true : false;
+
+        if (!isOtpValid) {
+            throw new ApiError(401, `Otp Not Matched`)
+        }
+
+        const { accessToken, refreshToken } = await generateWebAccessToken(vendor._id)
+
+        const loggedInUser = await Vendor.findById(vendor._id)
+
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+
+        return res
+            .status(200)
+            .cookie("accessToken", accessToken, options)
+            .cookie("refreshToken", refreshToken, options)
+            .json(
+                new ApiResponse(200, loggedInUser, `${usertype} logged In Successfully`, { "accessToken": accessToken, "refreshToken": refreshToken })
+            )
+
+    } catch (error) {
+        return res
+            .status(error.statusCode || 500)
+            .json(new ApiError(error.statusCode || 500, error.message || 'Server Error in UpdateInfo'))
+    }
+})
+
 const updateVendorDetail = asyncHandler(async (req, res) => {
 
     try {
-        const { Id, fullName, gender, city, state, street, area, pincode, latitude, longitude, mobile, email,status } = req.body
+        const { Id, fullName, gender, city, state, street, area, pincode, latitude, longitude, mobile, email, status } = req.body
         const profileImage = req.file?.filename
         const usertype = req.path.split("/")[1];
         if (!Id) {
@@ -816,7 +870,7 @@ const updateVendorDetail = asyncHandler(async (req, res) => {
                     },
                     vendorProfile,
                     mobile,
-                    email, 
+                    email,
                     status,
                 }
             },
@@ -907,7 +961,7 @@ const mailtesting = asyncHandler(async (req, res) => {
 </body>`;
         let email = "akash.logixhunt@gmail.com";
         const mailsend = await Sendmail(email, subject, body)
-  
+
         return res
             .status(200)
             .json(new ApiResponse(200, null, `details updated successfully`))
@@ -942,7 +996,7 @@ const mailtesting = asyncHandler(async (req, res) => {
 //                 console.log('Successfully sent notification');
 //             }
 //         });
-  
+
 //         return res
 //             .status(200)
 //             .json(new ApiResponse(200, null, `details updated successfully`))
@@ -974,6 +1028,7 @@ export {
     updatefcmCode,
     getVendorsTitle,
     mailtesting,
+    verifyWebOTP,
     // getVendorChannelProfile,
     // getWatchHistory
 }
