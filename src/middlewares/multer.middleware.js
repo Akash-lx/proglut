@@ -67,11 +67,11 @@ const adminStorage = multer.diskStorage({
 
 
 
-const vendorUpload = multer({ storage: vendorStorage });
-const userUpload = multer({ storage: userStorage });
-const domainUpload = multer({ storage: domainStorage });
-const itemUpload = multer({ storage: itemStorage });
-const galleryUpload = multer({ storage: galleryStorage });
-const bussinessUpload = multer({ storage: bussinessStorage });
-const adminUpload = multer({ storage: adminStorage });
+const vendorUpload = multer({ storage: vendorStorage , limits: { fileSize: 50 * 1024 * 1024 }});
+const userUpload = multer({ storage: userStorage, limits: { fileSize: 50 * 1024 * 1024 } });
+const domainUpload = multer({ storage: domainStorage , limits: { fileSize: 50 * 1024 * 1024 }});
+const itemUpload = multer({ storage: itemStorage , limits: { fileSize: 50 * 1024 * 1024 } });
+const galleryUpload = multer({ storage: galleryStorage , limits: { fileSize: 50 * 1024 * 1024 }});
+const bussinessUpload = multer({ storage: bussinessStorage, limits: { fileSize: 50 * 1024 * 1024 } });
+const adminUpload = multer({ storage: adminStorage , limits: { fileSize: 50 * 1024 * 1024 }});
 export { vendorUpload,userUpload,domainUpload,itemUpload,galleryUpload,bussinessUpload,adminUpload}
